@@ -28,6 +28,9 @@ router.post('/', authorize('manager', 'superadmin'), validate(createTaskSchema),
 // Specific task detail
 router.get('/:id', taskController.getTaskById);
 
+// Task progress tracker timeline - GET /api/tasks/:id/timeline
+router.get('/:id/timeline', taskController.getTaskTimeline);
+
 // Task details update karo - sirf manager/superadmin
 router.patch('/:id', authorize('manager', 'superadmin'), validate(updateTaskSchema), taskController.updateTask);
 

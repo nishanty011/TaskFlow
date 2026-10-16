@@ -24,6 +24,15 @@ app.use(express.urlencoded({ extended: true }));
 // Cookies parse karne ke liye (refresh token cookie mein store hoga)
 app.use(cookieParser());
 
+// NoSQL injection sanitization
+const sanitize = require('./middleware/sanitize');
+app.use(sanitize);
+
+const path = require('path');
+
+// Static uploads folder serve karein
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 // HTTP request logs - development mein debugging ke liye
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));

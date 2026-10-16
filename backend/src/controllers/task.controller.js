@@ -1,7 +1,7 @@
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
 const ApiResponse = require('../utils/ApiResponse');
-const { Task, User, Comment, ActivityLog, Department } = require('../models');
+const { Task, User, Comment, ActivityLog, Department, Submission, Feedback } = require('../models');
 const { USER_ROLES, TASK_STATUS, ENTITY_TYPES, ACTIVITY_ACTIONS } = require('../utils/constants');
 const {
   notifyTaskAssigned,
@@ -478,6 +478,105 @@ const getTaskStats = asyncHandler(async (req, res) => {
   );
 });
 
+// 11. GET /api/tasks/:id/timeline
+// Ordered events for progress tracker (assigned -> in_progress -> submissions -> feedbacks -> completed)
+const getTaskTimeline = asyncHandler(async (req, res) => {
+  const task = await Task.findById(req.params.id)
+    .populate('assignedTo', 'name email avatar designation')
+    .populate('assignedBy', 'name email avatar');
+
+  if (!task) throw new ApiError(404, 'Task nahi mila');
+
+  // Access check
+  if (req.user.role === USER_ROLES.EMPLOYEE) {
+    if (task.assignedTo._id.toString() !== req.user._id.toString()) {
+      throw new ApiError(403, 'Aap sirf apne task ka timeline dekh sakte hain');
+    }
+  } else if (req.user.role === USER_ROLES.MANAGER) {
+    const managerDeptId = req.user.department?._id?.toString() || req.user.department?.toString();
+    if (task.department.toString() !== managerDeptId) {
+      throw new ApiError(403, 'Aap sirf apne department ke task ka timeline dekh sakte hain');
+    }
+  }
+
+  const events = [];
+
+  // 1. Task Assigned
+  events.push({
+    type: 'assigned',
+    title: 'Task Assigned',
+    timestamp: task.createdAt,
+    actor: task.assignedBy,
+    meta: { priority: task.priority, dueDate: task.dueDate }
+  });
+
+  // 2. Submissions
+  const submissions = await Submission.find({ task: task._id })
+    .populate('employee', 'name email avatar')
+    .sort({ createdAt: 1 });
+
+  submissions.forEach((sub) => {
+    events.push({
+      type: 'submitted',
+      title: `Submission v${sub.version}`,
+      timestamp: sub.createdAt,
+      actor: sub.employee,
+      meta: {
+        version: sub.version,
+        note: sub.note,
+        progressClaimed: sub.progressClaimed,
+        filesCount: sub.files?.length || 0,
+        status: sub.status
+      }
+    });
+  });
+
+  // 3. Feedbacks
+  const feedbacks = await Feedback.find({ task: task._id })
+    .populate('author', 'name email avatar role')
+    .sort({ createdAt: 1 });
+
+  feedbacks.forEach((fb) => {
+    events.push({
+      type: fb.type === 'approval' ? 'approved' : fb.type === 'change_request' ? 'changes_requested' : 'feedback',
+      title: fb.type === 'approval' ? 'Submission Approved' : fb.type === 'change_request' ? 'Changes Requested' : 'Feedback Given',
+      timestamp: fb.createdAt,
+      actor: fb.author,
+      meta: {
+        message: fb.message,
+        rating: fb.rating
+      }
+    });
+  });
+
+  // 4. Completed Event if task is completed
+  if (task.completedAt) {
+    events.push({
+      type: 'completed',
+      title: 'Task Completed',
+      timestamp: task.completedAt,
+      actor: task.assignedBy,
+      meta: { progress: 100 }
+    });
+  }
+
+  // Chronological order
+  events.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+  res.status(200).json(
+    new ApiResponse(200, 'Task timeline events', {
+      task: {
+        _id: task._id,
+        title: task.title,
+        status: task.status,
+        progress: task.progress,
+        dueDate: task.dueDate
+      },
+      timeline: events
+    })
+  );
+});
+
 module.exports = {
   getTasks,
   getTaskById,
@@ -488,5 +587,6 @@ module.exports = {
   reviewTask,
   addComment,
   archiveTask,
-  getTaskStats
+  getTaskStats,
+  getTaskTimeline
 };
