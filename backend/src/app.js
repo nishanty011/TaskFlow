@@ -29,15 +29,9 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
-// Health check endpoint - server chal raha hai ya nahi check karne ke liye
-app.get('/api/health', (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: 'TaskFlow API chal rahi hai',
-    environment: process.env.NODE_ENV,
-    timestamp: new Date().toISOString()
-  });
-});
+// Master API routes - saare sub-routes /api ke under aate hain
+const apiRoutes = require('./routes');
+app.use('/api', apiRoutes);
 
 // Jab koi route match na kare toh 404 bhejo
 app.use((req, res, next) => {

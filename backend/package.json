@@ -1,5 +1,5 @@
 {
-  "name": "taskflow-server",
+  "name": "taskflow-backend",
   "version": "1.0.0",
   "description": "TaskFlow - Employee & Task Management System Backend",
   "main": "server.js",

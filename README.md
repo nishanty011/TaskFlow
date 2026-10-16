@@ -12,7 +12,7 @@ TaskFlow is a role-based employee and task management system built with the MERN
 ## Getting Started
 
 ### Backend Setup
-1. `cd server`
+1. `cd backend`
 2. `npm install`
 3. Configure `.env` from `.env.example`
 4. Run dev server: `npm run dev`
