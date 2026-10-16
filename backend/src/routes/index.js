@@ -13,10 +13,13 @@ router.get('/health', (req, res) => {
 
 // Sub-routes mounting
 const authRoutes = require('./auth.routes');
+const userRoutes = require('./user.routes');
+const departmentRoutes = require('./department.routes');
+const taskRoutes = require('./task.routes');
 router.use('/auth', authRoutes);
-// router.use('/users', userRoutes);
-// router.use('/departments', departmentRoutes);
-// router.use('/tasks', taskRoutes);
+router.use('/users', userRoutes);
+router.use('/departments', departmentRoutes);
+router.use('/tasks', taskRoutes);
 // router.use('/submissions', submissionRoutes);
 // router.use('/feedbacks', feedbackRoutes);
 // router.use('/dashboard', dashboardRoutes);
