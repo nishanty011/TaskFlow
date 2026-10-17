@@ -7,6 +7,9 @@ const { authorize } = require('../middleware/role');
 const validate = require('../middleware/validate');
 const { createDepartmentSchema, updateDepartmentSchema } = require('../validations/user.validation');
 
+// Public route - registration dropdown ke liye bina auth ke
+router.get('/public', deptController.getPublicDepartments);
+
 // Saare routes protected hain
 router.use(protect);
 

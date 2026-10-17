@@ -4,6 +4,18 @@ const ApiResponse = require('../utils/ApiResponse');
 const { Department, User } = require('../models');
 const { USER_ROLES, USER_STATUS } = require('../utils/constants');
 
+// 0. GET /api/departments/public
+// Registration form ke dropdown ke liye public list bina auth ke
+const getPublicDepartments = asyncHandler(async (req, res) => {
+  const departments = await Department.find({ isActive: true })
+    .select('_id name code description')
+    .sort({ name: 1 });
+
+  res.status(200).json(
+    new ApiResponse(200, 'Public departments fetch ho gaye', { departments })
+  );
+});
+
 // 1. GET /api/departments
 // Superadmin ke liye saare departments, manager ke liye sirf apna
 const getDepartments = asyncHandler(async (req, res) => {
@@ -137,6 +149,7 @@ const assignManager = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  getPublicDepartments,
   getDepartments,
   getDepartmentById,
   createDepartment,

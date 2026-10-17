@@ -1,0 +1,237 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --brand-primary: #4f46e5;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-white text-slate-900 antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-200 rounded-full hover:bg-slate-300 transition-colors;
+  }
+}
+
+@layer components {
+  /* Glass cards - light style */
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-xl border border-slate-100 shadow-lg shadow-slate-100/60;
+  }
+  .glass-card-hover {
+    @apply glass-card hover:shadow-xl hover:shadow-slate-200/70 hover:border-brand-200 transition-all duration-300;
+  }
+  .glass-header {
+    @apply bg-white/80 backdrop-blur-xl border-b border-slate-100 sticky top-0 z-40;
+  }
+
+  /* Auth card — inner padding wrapper only, glass styling is in AuthLayout */
+  .auth-card {
+    @apply w-full;
+  }
+
+  /* Studio Light Ambient Gradient — Clean, Bright & Airy Palette */
+  .bg-studio-theme {
+    background-color: #dce7f0;
+    background-image:
+      radial-gradient(ellipse 95% 80% at 0% 48%, #ffffff 0%, rgba(246, 250, 254, 0.98) 20%, rgba(225, 238, 248, 0.85) 45%, rgba(195, 215, 232, 0.55) 70%, transparent 95%),
+      linear-gradient(115deg, #ffffff 0%, #edf3f8 22%, #d7e5f0 52%, #bfd4e4 80%, #a4bfd3 100%);
+    background-attachment: fixed;
+    background-size: cover;
+    background-repeat: no-repeat;
+  }
+
+  /* 3D hover on cards */
+  .card-3d {
+    transform-style: preserve-3d;
+    transition: transform 0.4s ease;
+  }
+  .card-3d:hover {
+    transform: perspective(1000px) rotateX(-2deg) rotateY(2deg) scale(1.02);
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    @apply bg-gradient-to-r from-brand-600 to-violet-600 bg-clip-text text-transparent;
+  }
+
+  /* Brand gradient button */
+  .btn-gradient {
+    @apply bg-gradient-to-r from-brand-600 to-violet-600 hover:from-brand-700 hover:to-violet-700 text-white font-semibold rounded-2xl px-6 py-3 transition-all duration-300 shadow-md hover:shadow-lg hover:shadow-brand-200 active:scale-[0.98];
+  }
+
+  /* Input premium */
+  .input-premium {
+    @apply w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-400 transition-all duration-200 hover:border-slate-300;
+  }
+  
+  /* Floating label input wrapper */
+  .input-wrapper {
+    @apply relative;
+  }
+
+  /* Auth page background orb */
+  .bg-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+  }
+}
+
+/* ============================================
+   KEYFRAME ANIMATIONS
+   ============================================ */
+
+/* Fade up — for form elements, cards */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up {
+  animation: fadeUp 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+/* Delayed variants */
+.animate-fade-up-1 { animation: fadeUp 0.5s 0.1s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+.animate-fade-up-2 { animation: fadeUp 0.5s 0.2s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+.animate-fade-up-3 { animation: fadeUp 0.5s 0.3s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+.animate-fade-up-4 { animation: fadeUp 0.5s 0.4s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+
+/* Floating animation with increased dynamic movement area */
+@keyframes float1 {
+  0%, 100% { transform: translate(0px, 0px) rotate(0deg); }
+  25%       { transform: translate(12px, -26px) rotate(4deg); }
+  50%       { transform: translate(6px, -38px) rotate(1deg); }
+  75%       { transform: translate(-8px, -18px) rotate(-3deg); }
+}
+
+@keyframes float2 {
+  0%, 100% { transform: translate(0px, 0px) rotate(0deg); }
+  25%       { transform: translate(-14px, -30px) rotate(-4deg); }
+  50%       { transform: translate(-6px, -42px) rotate(-1deg); }
+  75%       { transform: translate(10px, -20px) rotate(3deg); }
+}
+
+@keyframes float3 {
+  0%, 100% { transform: translate(0px, 0px) rotate(0deg); }
+  25%       { transform: translate(10px, -24px) rotate(3deg); }
+  50%       { transform: translate(-8px, -36px) rotate(-2deg); }
+  75%       { transform: translate(-12px, -16px) rotate(2deg); }
+}
+
+.animate-float    { animation: float1 7s ease-in-out infinite; }
+.animate-float-2  { animation: float2 8.5s ease-in-out infinite; }
+.animate-float-3  { animation: float3 8s ease-in-out infinite; }
+
+/* Pulse ring for OTP submit */
+@keyframes pulseRing {
+  0%   { transform: scale(0.9); opacity: 1; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+.animate-pulse-ring {
+  animation: pulseRing 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+/* Gradient orb movement */
+@keyframes orbMove {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%       { transform: translate(30px, -30px) scale(1.05); }
+  66%       { transform: translate(-20px, 20px) scale(0.98); }
+}
+.animate-orb { animation: orbMove 12s ease-in-out infinite; }
+.animate-orb-2 { animation: orbMove 15s ease-in-out infinite reverse; }
+
+/* Scale in for success states */
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.5); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.animate-scale-in { animation: scaleIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }
+
+/* Shake for error */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25%       { transform: translateX(-6px); }
+  75%       { transform: translateX(6px); }
+}
+.animate-shake { animation: shake 0.4s ease-in-out; }
+
+/* Slide in from right */
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(30px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.animate-slide-right { animation: slideInRight 0.4s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+
+/* Stagger for OTP digits */
+@keyframes popIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.9); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-pop { animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }
+
+/* Gradient rotation for the left panel background */
+@keyframes gradientRotate {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradientRotate 8s ease-in-out infinite;
+}
+
+/* OTP input scale on focus */
+.otp-input:focus {
+  transform: scale(1.08);
+}
+
+/* Progress bar animation */
+@keyframes fillBar {
+  from { width: 0%; }
+  to   { width: var(--fill-width); }
+}
+.animate-fill-bar { animation: fillBar 0.6s ease-out both; }
+
+/* Continuous Horizontal Infinite Marquee for Moving Cards */
+@keyframes marqueeLeft {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes marqueeRight {
+  0% { transform: translateX(-50%); }
+  100% { transform: translateX(0%); }
+}
+
+.animate-marquee-left {
+  display: flex;
+  width: max-content;
+  animation: marqueeLeft 32s linear infinite;
+}
+
+.animate-marquee-left:hover {
+  animation-play-state: paused;
+}
+
+.animate-marquee-right {
+  display: flex;
+  width: max-content;
+  animation: marqueeRight 32s linear infinite;
+}
+
+.animate-marquee-right:hover {
+  animation-play-state: paused;
+}
+
