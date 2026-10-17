@@ -51,18 +51,18 @@ const approveEmployee = asyncHandler(async (req, res) => {
   employee.approvedAt = new Date();
   await employee.save();
 
-  // Employee ko notification bhejo - approved!
+  // Notify employee - account approved
   const notification = await Notification.create({
     user: employee._id,
     type: NOTIFICATION_TYPE.EMPLOYEE_APPROVED,
     title: 'Account Approved!',
-    message: `${req.user.name} ne aapka account approve kar diya hai. Ab aap TaskFlow use kar sakte hain!`,
+    message: `${req.user.name} approved your account. You can now access TaskFlow!`,
     link: '/dashboard'
   });
 
   emitToUser(employee._id.toString(), 'notification', notification);
 
-  // Activity log record karein
+  // Activity log record
   await ActivityLog.create({
     actor: req.user._id,
     action: ACTIVITY_ACTIONS.USER_APPROVED,
@@ -73,7 +73,7 @@ const approveEmployee = asyncHandler(async (req, res) => {
   });
 
   res.status(200).json(
-    new ApiResponse(200, `${employee.name} ka account approve ho gaya`, {
+    new ApiResponse(200, `${employee.name}'s account has been approved`, {
       employee: {
         _id: employee._id,
         name: employee.name,
@@ -86,7 +86,7 @@ const approveEmployee = asyncHandler(async (req, res) => {
 });
 
 // 3. PATCH /api/users/:id/reject
-// Manager apne department ke pending employee ko reject kare
+// Manager rejects pending employee in their department
 const rejectEmployee = asyncHandler(async (req, res) => {
   const { reason } = req.body;
   const employee = await User.findById(req.params.id).populate('department');
@@ -107,12 +107,12 @@ const rejectEmployee = asyncHandler(async (req, res) => {
   employee.status = USER_STATUS.REJECTED;
   await employee.save();
 
-  // Employee ko rejection ki notification bhejo
+  // Notify employee of rejection
   const notification = await Notification.create({
     user: employee._id,
     type: NOTIFICATION_TYPE.EMPLOYEE_REJECTED,
-    title: 'Registration Rejected',
-    message: `Aapki registration request reject ho gayi hai. Reason: ${reason}`,
+    title: 'Registration Request Rejected',
+    message: `Your registration request was rejected. Reason: ${reason}`,
     link: '/contact'
   });
 

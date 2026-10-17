@@ -28,23 +28,23 @@ const checkOverdueTasks = async () => {
       });
 
       if (!recentNotif) {
-        // Employee ko overdue alert
+        // Overdue alert to employee
         const empNotif = await Notification.create({
           user: task.assignedTo._id,
           type: NOTIFICATION_TYPE.TASK_OVERDUE,
-          title: 'Task Overdue Ho Gaya!',
-          message: `Aapka task "${task.title}" ki deadline guzar chuki hai. Kripya jald se jald complete karein.`,
+          title: 'Task Overdue Alert',
+          message: `Your task "${task.title}" has passed its due date. Please complete and submit it as soon as possible.`,
           link: `/tasks/${task._id}`
         });
         emitToUser(task.assignedTo._id.toString(), 'notification', empNotif);
 
-        // Manager ko bhi alert bhejo agar assignedBy hai
+        // Alert to manager if task has assigner
         if (task.assignedBy) {
           const mgrNotif = await Notification.create({
             user: task.assignedBy._id,
             type: NOTIFICATION_TYPE.TASK_OVERDUE,
             title: 'Department Task Overdue Alert',
-            message: `${task.assignedTo.name} ka task "${task.title}" overdue ho gaya hai.`,
+            message: `${task.assignedTo.name}'s task "${task.title}" is now overdue.`,
             link: `/tasks/${task._id}`
           });
           emitToUser(task.assignedBy._id.toString(), 'notification', mgrNotif);
@@ -59,7 +59,7 @@ const checkOverdueTasks = async () => {
   }
 };
 
-// 24 ghante mein due aane wale tasks ke liye reminder bhejein
+// Send reminder for tasks due in next 24 hours
 const sendDeadlineReminders = async () => {
   try {
     const now = new Date();
@@ -86,7 +86,7 @@ const sendDeadlineReminders = async () => {
           user: task.assignedTo._id,
           type: NOTIFICATION_TYPE.DEADLINE_REMINDER,
           title: 'Deadline Reminder',
-          message: `Aapka task "${task.title}" agle 24 ghanton mein due hai!`,
+          message: `Your task "${task.title}" is due within the next 24 hours!`,
           link: `/tasks/${task._id}`
         });
         emitToUser(task.assignedTo._id.toString(), 'notification', notif);

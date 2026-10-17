@@ -84,15 +84,25 @@ export default function NotificationDropdown() {
       case "task_assigned":
         return "📋";
       case "submission_received":
+      case "task_submitted":
         return "📥";
       case "submission_approved":
-        return "✅";
+      case "task_approved":
+        return "✨";
       case "changes_requested":
         return "⚠️";
       case "feedback_added":
+      case "comment_added":
         return "💬";
       case "user_approved":
+      case "employee_approved":
         return "🎉";
+      case "task_overdue":
+        return "⏰";
+      case "deadline_reminder":
+        return "⏳";
+      case "employee_registered":
+        return "👤";
       default:
         return "🔔";
     }

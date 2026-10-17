@@ -2,14 +2,14 @@ const { Notification } = require('../models');
 const { NOTIFICATION_TYPE } = require('../utils/constants');
 const { emitToUser, emitToDepartment } = require('../config/socket');
 
-// Task assignment notification - employee ko batao naya task mila
+// Task assignment notification - notify employee of new assigned task
 const notifyTaskAssigned = async (task, employee, manager) => {
   try {
     const notification = await Notification.create({
       user: employee._id,
       type: NOTIFICATION_TYPE.TASK_ASSIGNED,
-      title: 'Naya Task Assign Hua!',
-      message: `${manager.name} ne aapko ek naya task assign kiya hai: "${task.title}"`,
+      title: 'New Task Assigned',
+      message: `${manager.name} assigned you a new task: "${task.title}"`,
       link: `/tasks/${task._id}`
     });
     emitToUser(employee._id.toString(), 'notification', notification);
@@ -19,14 +19,14 @@ const notifyTaskAssigned = async (task, employee, manager) => {
   }
 };
 
-// Task submission notification - manager ko batao kisi ne submit kiya
+// Task submission notification - notify manager of new submission
 const notifyTaskSubmitted = async (task, employee, managerId) => {
   try {
     const notification = await Notification.create({
       user: managerId,
       type: NOTIFICATION_TYPE.TASK_SUBMITTED,
-      title: 'Naya Submission Review Ke Liye',
-      message: `${employee.name} ne task submit kar diya hai: "${task.title}"`,
+      title: 'New Submission for Review',
+      message: `${employee.name} submitted work for review: "${task.title}"`,
       link: `/tasks/${task._id}/review`
     });
     emitToUser(managerId.toString(), 'notification', notification);
@@ -36,14 +36,14 @@ const notifyTaskSubmitted = async (task, employee, managerId) => {
   }
 };
 
-// Manager approved - employee ko batao task approve ho gaya
+// Manager approved - notify employee that task was approved
 const notifyTaskApproved = async (task, employee, manager) => {
   try {
     const notification = await Notification.create({
       user: employee._id,
       type: NOTIFICATION_TYPE.TASK_APPROVED,
-      title: 'Task Approve Ho Gaya!',
-      message: `${manager.name} ne aapka task approve kar diya hai: "${task.title}"`,
+      title: 'Task Approved!',
+      message: `${manager.name} approved your task: "${task.title}"`,
       link: `/tasks/${task._id}`
     });
     emitToUser(employee._id.toString(), 'notification', notification);
@@ -53,14 +53,14 @@ const notifyTaskApproved = async (task, employee, manager) => {
   }
 };
 
-// Manager ne changes request kiye - employee ko batao
+// Manager requested changes - notify employee
 const notifyChangesRequested = async (task, employee, manager) => {
   try {
     const notification = await Notification.create({
       user: employee._id,
       type: NOTIFICATION_TYPE.CHANGES_REQUESTED,
       title: 'Changes Requested',
-      message: `${manager.name} ne aapke task mein changes request kiye hain: "${task.title}"`,
+      message: `${manager.name} requested changes on your task: "${task.title}"`,
       link: `/tasks/${task._id}`
     });
     emitToUser(employee._id.toString(), 'notification', notification);
@@ -70,17 +70,16 @@ const notifyChangesRequested = async (task, employee, manager) => {
   }
 };
 
-// New comment notification - mentioned users ko batao
+// New comment notification - notify mentioned users
 const notifyComment = async (task, comment, author, mentionedUserIds = []) => {
   try {
-    // Saare mentioned users ko notification bhejo
     for (const userId of mentionedUserIds) {
       if (userId.toString() !== author._id.toString()) {
         const notification = await Notification.create({
           user: userId,
           type: NOTIFICATION_TYPE.COMMENT_ADDED,
-          title: 'Aapko Mention Kiya Gaya!',
-          message: `${author.name} ne aapko task "${task.title}" ke comment mein mention kiya hai`,
+          title: 'You were mentioned',
+          message: `${author.name} mentioned you in a comment on task "${task.title}"`,
           link: `/tasks/${task._id}`
         });
         emitToUser(userId.toString(), 'notification', notification);

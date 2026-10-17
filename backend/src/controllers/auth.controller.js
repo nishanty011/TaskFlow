@@ -120,16 +120,16 @@ const verifyEmail = asyncHandler(async (req, res) => {
   if (user.department && user.department.manager) {
     const manager = await User.findById(user.department.manager);
     if (manager) {
-      // In-app Notification create karein
+      // Create In-app Notification
       const notification = await Notification.create({
         user: manager._id,
         type: NOTIFICATION_TYPE.EMPLOYEE_REGISTERED,
         title: 'New Employee Pending Approval',
-        message: `${user.name} ne ${user.department.name} department ke liye register kiya hai aur approval ka wait kar rahe hain.`,
+        message: `${user.name} registered for the ${user.department.name} department and is waiting for your approval.`,
         link: '/manager/pending-employees'
       });
 
-      // Socket.io se manager ke room me real-time alert bhejein
+      // Emit real-time notification to manager
       emitToUser(manager._id.toString(), 'notification', notification);
 
       // Email notification bhejein

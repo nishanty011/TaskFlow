@@ -31,7 +31,7 @@ export default function NotificationsPage() {
       setUnreadCount(unread);
     } catch (err) {
       console.error("Failed to load notifications:", err);
-      toast.error("Notifications load nahi ho sake");
+      toast.error("Failed to load notifications");
     } finally {
       setLoading(false);
     }
@@ -57,7 +57,7 @@ export default function NotificationsPage() {
       );
       setUnreadCount((c) => Math.max(0, c - 1));
     } catch {
-      toast.error("Mark read fail hua");
+      toast.error("Failed to mark as read");
     }
   };
 
@@ -66,9 +66,9 @@ export default function NotificationsPage() {
       await markAllNotificationsAsRead();
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
       setUnreadCount(0);
-      toast.success("Saare notifications read mark ho gaye! ✓");
+      toast.success("All notifications marked as read ✓");
     } catch {
-      toast.error("Mark all read fail hua");
+      toast.error("Failed to mark all as read");
     }
   };
 
@@ -83,7 +83,7 @@ export default function NotificationsPage() {
       }
       toast.success("Notification deleted");
     } catch {
-      toast.error("Delete fail hua");
+      toast.error("Failed to delete notification");
     }
   };
 
@@ -91,9 +91,9 @@ export default function NotificationsPage() {
     try {
       await clearReadNotifications();
       setNotifications((prev) => prev.filter((n) => !n.isRead));
-      toast.success("Read notifications clear ho gaye");
+      toast.success("Read notifications cleared");
     } catch {
-      toast.error("Clear read fail hua");
+      toast.error("Failed to clear read notifications");
     }
   };
 
@@ -207,8 +207,8 @@ export default function NotificationsPage() {
           title="All caught up!"
           message={
             filter === "unread"
-              ? "Aapke paas koi unread notifications nahi hain."
-              : "Abhi koi notifications available nahi hain."
+              ? "You have no unread notifications."
+              : "No notifications available at this time."
           }
         />
       ) : (

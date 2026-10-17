@@ -61,12 +61,12 @@ const createFeedback = asyncHandler(async (req, res) => {
     rating: rating || null
   });
 
-  // Employee ko notification bhejo
+  // Notify employee of feedback received
   const notification = await Notification.create({
     user: task.assignedTo._id,
     type: NOTIFICATION_TYPE.COMMENT_ADDED,
-    title: 'Naya Feedback Mila!',
-    message: `${req.user.name} ne aapke task "${task.title}" par feedback diya: "${message.substring(0, 50)}..."`,
+    title: 'New Feedback Received',
+    message: `${req.user.name} gave feedback on "${task.title}": "${message.substring(0, 50)}..."`,
     link: `/tasks/${task._id}`
   });
 

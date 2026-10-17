@@ -75,6 +75,16 @@ export function SocketProvider({ children }) {
                     ? "⚠️"
                     : notif.type === "task_submitted"
                     ? "📥"
+                    : notif.type === "comment_added"
+                    ? "💬"
+                    : notif.type === "employee_approved"
+                    ? "🎉"
+                    : notif.type === "task_overdue"
+                    ? "⏰"
+                    : notif.type === "deadline_reminder"
+                    ? "⏳"
+                    : notif.type === "employee_registered"
+                    ? "👤"
                     : "🔔"}
                 </div>
                 <div className="ml-3 flex-1">
