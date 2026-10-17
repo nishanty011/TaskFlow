@@ -247,9 +247,58 @@ const reviewSubmission = asyncHandler(async (req, res) => {
   );
 });
 
+// 5. GET /api/submissions/pending (Manager / Superadmin)
+// Manager apne department ke saare pending submissions dekhe
+const getPendingSubmissions = asyncHandler(async (req, res) => {
+  const managerDeptId = req.user.department?._id || req.user.department;
+  const filter = req.user.role === USER_ROLES.SUPERADMIN
+    ? { isArchived: false }
+    : { department: managerDeptId, isArchived: false };
+
+  const deptTasks = await Task.find(filter).select('_id');
+  const taskIds = deptTasks.map((t) => t._id);
+
+  const pendingSubmissions = await Submission.find({
+    task: { $in: taskIds },
+    status: 'pending'
+  })
+    .populate('employee', 'name email avatar designation')
+    .populate({
+      path: 'task',
+      select: 'title priority dueDate progress department checklist tags',
+      populate: { path: 'assignedTo', select: 'name email avatar' }
+    })
+    .sort({ createdAt: -1 });
+
+  res.status(200).json(
+    new ApiResponse(200, 'Pending submissions fetch ho gayi', {
+      count: pendingSubmissions.length,
+      submissions: pendingSubmissions
+    })
+  );
+});
+
+// 6. GET /api/submissions/my (Employee)
+// Current logged-in employee ke saare submissions
+const getMySubmissions = asyncHandler(async (req, res) => {
+  const submissions = await Submission.find({ employee: req.user._id })
+    .populate('task', 'title priority dueDate status progress')
+    .populate('reviewedBy', 'name email avatar')
+    .sort({ createdAt: -1 });
+
+  res.status(200).json(
+    new ApiResponse(200, 'My submissions fetch ho gayi', {
+      count: submissions.length,
+      submissions
+    })
+  );
+});
+
 module.exports = {
   createSubmission,
   getTaskSubmissions,
   getSubmissionById,
-  reviewSubmission
+  reviewSubmission,
+  getPendingSubmissions,
+  getMySubmissions
 };

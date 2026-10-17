@@ -139,10 +139,13 @@ const rejectEmployee = asyncHandler(async (req, res) => {
 const getEmployees = asyncHandler(async (req, res) => {
   const { status, search, page = 1, limit = 20 } = req.query;
 
-  // Base filter - superadmin ko sab, manager ko sirf apna department
+  // Base filter - superadmin ko sab, manager & employee ko sirf apna department
   const filter = {};
 
-  if (req.user.role === USER_ROLES.MANAGER) {
+  if (req.user.role === USER_ROLES.EMPLOYEE) {
+    filter.department = req.user.department?._id || req.user.department;
+    filter.status = USER_STATUS.ACTIVE;
+  } else if (req.user.role === USER_ROLES.MANAGER) {
     filter.department = req.user.department?._id || req.user.department;
     filter.role = USER_ROLES.EMPLOYEE;
   } else if (req.user.role === USER_ROLES.SUPERADMIN) {

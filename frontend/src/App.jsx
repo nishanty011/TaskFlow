@@ -30,7 +30,12 @@ import ReportsPage from "./pages/admin/ReportsPage";
 import ManagerDashboardPage from "./pages/manager/ManagerDashboardPage";
 import ManagerApprovalsPage from "./pages/manager/ManagerApprovalsPage";
 import ManagerEmployeesPage from "./pages/manager/ManagerEmployeesPage";
+import ManagerTasksPage from "./pages/manager/ManagerTasksPage";
+import ManagerReviewsPage from "./pages/manager/ManagerReviewsPage";
 import EmployeeDashboardPage from "./pages/employee/EmployeeDashboardPage";
+import EmployeeTasksPage from "./pages/employee/EmployeeTasksPage";
+import EmployeeSubmissionsPage from "./pages/employee/EmployeeSubmissionsPage";
+import EmployeeTeamPage from "./pages/employee/EmployeeTeamPage";
 
 export default function App() {
   return (
@@ -96,10 +101,10 @@ export default function App() {
             <Route element={<ProtectedRoute roles={["manager", "superadmin"]} />}>
               <Route element={<AppLayout />}>
                 <Route path="/manager/dashboard" element={<ManagerDashboardPage />} />
-                <Route path="/manager/tasks" element={<ManagerDashboardPage />} />
+                <Route path="/manager/tasks" element={<ManagerTasksPage />} />
                 <Route path="/manager/approvals" element={<ManagerApprovalsPage />} />
                 <Route path="/manager/employees" element={<ManagerEmployeesPage />} />
-                <Route path="/manager/reviews" element={<ManagerDashboardPage />} />
+                <Route path="/manager/reviews" element={<ManagerReviewsPage />} />
                 <Route path="/manager/analytics" element={<ManagerDashboardPage />} />
               </Route>
             </Route>
@@ -107,9 +112,9 @@ export default function App() {
             <Route element={<ProtectedRoute roles={["employee"]} />}>
               <Route element={<AppLayout />}>
                 <Route path="/employee/dashboard" element={<EmployeeDashboardPage />} />
-                <Route path="/employee/tasks" element={<EmployeeDashboardPage />} />
-                <Route path="/employee/submissions" element={<EmployeeDashboardPage />} />
-                <Route path="/employee/team" element={<EmployeeDashboardPage />} />
+                <Route path="/employee/tasks" element={<EmployeeTasksPage />} />
+                <Route path="/employee/submissions" element={<EmployeeSubmissionsPage />} />
+                <Route path="/employee/team" element={<EmployeeTeamPage />} />
               </Route>
             </Route>
 

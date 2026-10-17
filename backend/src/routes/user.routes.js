@@ -33,8 +33,8 @@ router.patch('/:id/reject', authorize('manager', 'superadmin'), validate(rejectE
 // Superadmin employee/manager ko suspend kare
 router.patch('/:id/suspend', authorize('superadmin'), userController.suspendUser);
 
-// Employee directory - manager apne dept ka dekhe, superadmin sab dekhe
-router.get('/', authorize('manager', 'superadmin'), userController.getEmployees);
+// Employee/Manager/Admin directory - scoped by role
+router.get('/', authorize('employee', 'manager', 'superadmin'), userController.getEmployees);
 
 // Specific employee detail
 router.get('/:id', userController.getEmployeeById);
