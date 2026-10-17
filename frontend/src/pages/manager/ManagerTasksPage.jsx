@@ -56,7 +56,7 @@ export default function ManagerTasksPage() {
       setIsReviewOpen(true);
     } catch (err) {
       console.error("Failed to load submission for review:", err);
-      toast.error("Submissions load nahi ho paye");
+      toast.error("Failed to load submissions");
     } finally {
       setLoadingReview(false);
     }
@@ -77,7 +77,7 @@ export default function ManagerTasksPage() {
       setEmployees(empRes.data?.data?.employees || []);
     } catch (err) {
       console.error("Failed to load department tasks:", err);
-      toast.error("Tasks load nahi ho paye");
+      toast.error("Failed to load department tasks");
     } finally {
       setLoading(false);
     }
@@ -92,10 +92,10 @@ export default function ManagerTasksPage() {
     if (!window.confirm("Are you sure you want to archive this task?")) return;
     try {
       await archiveTask(taskId);
-      toast.success("Task archived");
+      toast.success("Task archived successfully");
       fetchTasksData();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Archive nahi ho paya");
+      toast.error(err.response?.data?.message || "Failed to archive task");
     }
   };
 
@@ -111,7 +111,7 @@ export default function ManagerTasksPage() {
       // Refresh task
       fetchTasksData();
     } catch (err) {
-      toast.error("Comment add nahi ho paya");
+      toast.error(err.response?.data?.message || "Failed to add comment");
     } finally {
       setSubmittingComment(false);
     }

@@ -85,7 +85,7 @@ const createFeedback = asyncHandler(async (req, res) => {
     .populate('author', 'name email avatar role');
 
   res.status(201).json(
-    new ApiResponse(201, 'Feedback add ho gaya', { feedback: populated })
+    new ApiResponse(201, 'Feedback added successfully', { feedback: populated })
   );
 });
 

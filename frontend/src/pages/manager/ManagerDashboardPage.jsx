@@ -116,7 +116,7 @@ export default function ManagerDashboardPage() {
       setPendingCount(pendingList.length);
     } catch (err) {
       console.error("Manager dashboard error:", err);
-      toast.error("Dashboard data load nahi ho paya");
+      toast.error("Failed to load dashboard data");
     } finally {
       setLoading(false);
     }

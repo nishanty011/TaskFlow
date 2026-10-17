@@ -33,7 +33,7 @@ export default function DepartmentManagementPage() {
       const res = await getAllDepartments();
       setDepartments(res.data.data?.departments || res.data.data || []);
     } catch (err) {
-      toast.error("Departments load nahi hue");
+      toast.error("Failed to load departments");
     } finally {
       setLoading(false);
     }
@@ -54,17 +54,17 @@ export default function DepartmentManagementPage() {
   // Save department (create/update)
   const handleSave = async () => {
     if (!formData.name.trim() || !formData.code.trim()) {
-      toast.error("Name aur Code dono required hain");
+      toast.error("Department Name and Code are both required");
       return;
     }
     try {
       setSaving(true);
       if (editDept) {
         await updateDepartment(editDept._id, formData);
-        toast.success("Department update ho gaya!");
+        toast.success("Department updated successfully!");
       } else {
         await createDepartment(formData);
-        toast.success("Naya department create ho gaya!");
+        toast.success("New department created successfully!");
       }
       setModalOpen(false);
       fetchDepartments();
@@ -92,13 +92,13 @@ export default function DepartmentManagementPage() {
   // Assign manager
   const handleAssignManager = async () => {
     if (!selectedManager) {
-      toast.error("Manager select karo");
+      toast.error("Please select a manager");
       return;
     }
     try {
       setSaving(true);
       await assignManager(assignModal._id, { managerId: selectedManager });
-      toast.success("Manager assign ho gaya!");
+      toast.success("Manager assigned successfully!");
       setAssignModal(null);
       fetchDepartments();
     } catch (err) {

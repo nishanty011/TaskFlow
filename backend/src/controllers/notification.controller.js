@@ -28,7 +28,7 @@ const getMyNotifications = asyncHandler(async (req, res) => {
   });
 
   res.status(200).json(
-    new ApiResponse(200, 'Notifications fetch ho gayi', {
+    new ApiResponse(200, 'Notifications fetched successfully', {
       total,
       unreadCount,
       page: parseInt(page),
@@ -39,7 +39,7 @@ const getMyNotifications = asyncHandler(async (req, res) => {
 });
 
 // 2. PATCH /api/notifications/:id/read
-// Single notification ko read mark karein
+// Mark single notification as read
 const markAsRead = asyncHandler(async (req, res) => {
   const notification = await Notification.findOne({
     _id: req.params.id,
@@ -47,7 +47,7 @@ const markAsRead = asyncHandler(async (req, res) => {
   });
 
   if (!notification) {
-    throw new ApiError(404, 'Notification nahi mila');
+    throw new ApiError(404, 'Notification not found');
   }
 
   notification.isRead = true;
@@ -59,7 +59,7 @@ const markAsRead = asyncHandler(async (req, res) => {
   });
 
   res.status(200).json(
-    new ApiResponse(200, 'Notification read mark ho gaya', {
+    new ApiResponse(200, 'Notification marked as read', {
       notification,
       unreadCount
     })
@@ -67,7 +67,7 @@ const markAsRead = asyncHandler(async (req, res) => {
 });
 
 // 3. PATCH /api/notifications/read-all
-// Saare unread notifications ko ek sath read mark karein
+// Mark all notifications as read
 const markAllAsRead = asyncHandler(async (req, res) => {
   await Notification.updateMany(
     { user: req.user._id, isRead: false },
@@ -75,12 +75,12 @@ const markAllAsRead = asyncHandler(async (req, res) => {
   );
 
   res.status(200).json(
-    new ApiResponse(200, 'Saare notifications read mark ho gaye', { unreadCount: 0 })
+    new ApiResponse(200, 'All notifications marked as read', { unreadCount: 0 })
   );
 });
 
 // 4. DELETE /api/notifications/:id
-// Single notification delete karein
+// Delete a single notification
 const deleteNotification = asyncHandler(async (req, res) => {
   const notification = await Notification.findOneAndDelete({
     _id: req.params.id,
@@ -88,16 +88,16 @@ const deleteNotification = asyncHandler(async (req, res) => {
   });
 
   if (!notification) {
-    throw new ApiError(404, 'Notification nahi mila');
+    throw new ApiError(404, 'Notification not found');
   }
 
   res.status(200).json(
-    new ApiResponse(200, 'Notification delete ho gaya', { notificationId: req.params.id })
+    new ApiResponse(200, 'Notification deleted successfully', { notificationId: req.params.id })
   );
 });
 
 // 5. DELETE /api/notifications/clear-all
-// Saare read notifications delete karein
+// Clear all read notifications
 const clearReadNotifications = asyncHandler(async (req, res) => {
   const result = await Notification.deleteMany({
     user: req.user._id,
@@ -105,7 +105,7 @@ const clearReadNotifications = asyncHandler(async (req, res) => {
   });
 
   res.status(200).json(
-    new ApiResponse(200, `${result.deletedCount} read notifications clear ho gaye`)
+    new ApiResponse(200, `${result.deletedCount} read notifications cleared`)
   );
 });
 

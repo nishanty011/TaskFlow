@@ -103,7 +103,7 @@ export default function AuditLogsPage() {
       }
     } catch (err) {
       console.error("Failed to load audit logs:", err);
-      toast.error("Audit logs load nahi hue");
+      toast.error("Failed to load audit logs");
     } finally {
       setLoading(false);
     }

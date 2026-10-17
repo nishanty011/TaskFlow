@@ -172,7 +172,7 @@ export default function AdminDashboardPage() {
       const res = await getAdminDashboard();
       setData(res.data.data);
     } catch (err) {
-      toast.error("Dashboard data load nahi hua");
+      toast.error("Failed to load dashboard data");
       console.error(err);
     } finally {
       setLoading(false);

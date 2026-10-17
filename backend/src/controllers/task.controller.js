@@ -166,7 +166,7 @@ const createTask = asyncHandler(async (req, res) => {
     .populate('assignedBy', 'name email');
 
   res.status(201).json(
-    new ApiResponse(201, 'Task create aur assign ho gaya', { task: populated })
+    new ApiResponse(201, 'Task created and assigned successfully', { task: populated })
   );
 });
 
@@ -209,25 +209,25 @@ const updateTask = asyncHandler(async (req, res) => {
   });
 
   res.status(200).json(
-    new ApiResponse(200, 'Task update ho gaya', { task })
+    new ApiResponse(200, 'Task updated successfully', { task })
   );
 });
 
 // 5. PATCH /api/tasks/:id/status (Employee only)
-// Employee task ko in_progress ya submitted mark kare
+// Employee marks task in_progress or submitted
 const updateTaskStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
   const task = await Task.findById(req.params.id)
     .populate('assignedBy', 'name email _id department');
 
-  if (!task) throw new ApiError(404, 'Task nahi mila');
+  if (!task) throw new ApiError(404, 'Task not found');
 
-  // Sirf assigned employee apna task update kar sake
+  // Only assigned employee can update their task
   if (task.assignedTo.toString() !== req.user._id.toString()) {
-    throw new ApiError(403, 'Aap sirf apne assigned task ka status update kar sakte hain');
+    throw new ApiError(403, 'You can only update the status of tasks assigned to you');
   }
 
-  // Status transition rules - kya se kya ja sakte hain
+  // Status transition rules
   const allowedTransitions = {
     [TASK_STATUS.ASSIGNED]: [TASK_STATUS.IN_PROGRESS],
     [TASK_STATUS.IN_PROGRESS]: [TASK_STATUS.SUBMITTED],
@@ -236,16 +236,16 @@ const updateTaskStatus = asyncHandler(async (req, res) => {
 
   const allowed = allowedTransitions[task.status];
   if (!allowed || !allowed.includes(status)) {
-    throw new ApiError(400, `Task '${task.status}' se '${status}' nahi ho sakta. Valid transitions: ${allowed?.join(', ') || 'none'}`);
+    throw new ApiError(400, `Task cannot transition from '${task.status}' to '${status}'. Valid transitions: ${allowed?.join(', ') || 'none'}`);
   }
 
   task.status = status;
 
-  // Submitted kiya toh under_review mark karo
+  // If submitted, mark under_review
   if (status === TASK_STATUS.SUBMITTED) {
     task.status = TASK_STATUS.UNDER_REVIEW;
 
-    // Manager ko notification bhejo
+    // Notify manager
     const managerId = task.assignedBy._id || task.assignedBy;
     await notifyTaskSubmitted(task, req.user, managerId);
 
@@ -261,39 +261,39 @@ const updateTaskStatus = asyncHandler(async (req, res) => {
   await task.save();
 
   res.status(200).json(
-    new ApiResponse(200, `Task status '${task.status}' ho gaya`, { task })
+    new ApiResponse(200, `Task status changed to '${task.status}'`, { task })
   );
 });
 
 // 6. PATCH /api/tasks/:id/checklist (Employee only)
-// Checklist item done/undone mark karo aur progress auto-calculate karo
+// Toggle checklist item and auto-calculate progress
 const updateChecklist = asyncHandler(async (req, res) => {
   const { itemId, done } = req.body;
 
   const task = await Task.findById(req.params.id);
-  if (!task) throw new ApiError(404, 'Task nahi mila');
+  if (!task) throw new ApiError(404, 'Task not found');
 
   if (task.assignedTo.toString() !== req.user._id.toString()) {
-    throw new ApiError(403, 'Aap sirf apne task ki checklist update kar sakte hain');
+    throw new ApiError(403, 'You can only update your own task checklist');
   }
 
   if ([TASK_STATUS.COMPLETED, TASK_STATUS.UNDER_REVIEW].includes(task.status)) {
-    throw new ApiError(400, 'Is status mein checklist update nahi ho sakti');
+    throw new ApiError(400, 'Checklist cannot be updated in current task status');
   }
 
-  // Checklist item dhundho
+  // Find checklist item
   const item = task.checklist.id(itemId);
-  if (!item) throw new ApiError(404, 'Checklist item nahi mila');
+  if (!item) throw new ApiError(404, 'Checklist item not found');
 
   item.done = done;
 
-  // Weighted progress recalculate karo
+  // Recalculate progress
   task.progress = calculateProgress(task.checklist);
 
   await task.save();
 
   res.status(200).json(
-    new ApiResponse(200, 'Checklist update ho gaya', {
+    new ApiResponse(200, 'Checklist updated successfully', {
       checklist: task.checklist,
       progress: task.progress
     })
@@ -355,29 +355,29 @@ const reviewTask = asyncHandler(async (req, res) => {
   await task.save();
 
   res.status(200).json(
-    new ApiResponse(200, action === 'approve' ? 'Task approve ho gaya!' : 'Changes request bhej di gayi', {
+    new ApiResponse(200, action === 'approve' ? 'Task approved successfully!' : 'Changes requested successfully', {
       task
     })
   );
 });
 
 // 8. POST /api/tasks/:id/comments
-// Task par comment add karo (manager ya employee dono kar sakte hain)
+// Add comment to task
 const addComment = asyncHandler(async (req, res) => {
   const message = (req.body.message || req.body.content || '').trim();
   const { mentions = [] } = req.body;
 
   const task = await Task.findById(req.params.id);
-  if (!task) throw new ApiError(404, 'Task nahi mila');
+  if (!task) throw new ApiError(404, 'Task not found');
 
   // Access check
   if (req.user.role === USER_ROLES.EMPLOYEE && task.assignedTo.toString() !== req.user._id.toString()) {
-    throw new ApiError(403, 'Aap sirf apne assigned task par comment kar sakte hain');
+    throw new ApiError(403, 'You can only comment on tasks assigned to you');
   }
   if (req.user.role === USER_ROLES.MANAGER) {
     const managerDeptId = req.user.department?._id?.toString() || req.user.department?.toString();
     if (task.department.toString() !== managerDeptId) {
-      throw new ApiError(403, 'Aap sirf apne department ke tasks par comment kar sakte hain');
+      throw new ApiError(403, 'You can only comment on tasks within your department');
     }
   }
 
@@ -400,32 +400,32 @@ const addComment = asyncHandler(async (req, res) => {
     department: task.department
   });
 
-  // Mentioned users ko notify karo
+  // Notify mentioned users
   if (mentions.length > 0) {
     await notifyComment(task, comment, req.user, mentions);
   }
 
   res.status(201).json(
-    new ApiResponse(201, 'Comment add ho gaya', { comment: populated })
+    new ApiResponse(201, 'Comment added successfully', { comment: populated })
   );
 });
 
 // 9. DELETE /api/tasks/:id (Manager only)
-// Task archive karo (soft delete)
+// Soft-delete/archive task
 const archiveTask = asyncHandler(async (req, res) => {
   const task = await Task.findById(req.params.id);
-  if (!task) throw new ApiError(404, 'Task nahi mila');
+  if (!task) throw new ApiError(404, 'Task not found');
 
   const managerDeptId = req.user.department?._id?.toString() || req.user.department?.toString();
   if (task.department.toString() !== managerDeptId) {
-    throw new ApiError(403, 'Aap sirf apne department ke tasks archive kar sakte hain');
+    throw new ApiError(403, 'You can only archive tasks within your department');
   }
 
   task.isArchived = true;
   await task.save();
 
   res.status(200).json(
-    new ApiResponse(200, 'Task archive ho gaya', { taskId: task._id })
+    new ApiResponse(200, 'Task archived successfully', { taskId: task._id })
   );
 });
 

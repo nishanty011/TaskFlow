@@ -128,7 +128,7 @@ const rejectEmployee = asyncHandler(async (req, res) => {
   });
 
   res.status(200).json(
-    new ApiResponse(200, `${employee.name} ki request reject kar di gayi`, {
+    new ApiResponse(200, `${employee.name}'s registration request was rejected`, {
       employee: { _id: employee._id, name: employee.name, status: employee.status }
     })
   );
@@ -218,7 +218,7 @@ const updateProfile = asyncHandler(async (req, res) => {
   const { name, designation, phone, skills } = req.body;
 
   const user = await User.findById(req.user._id);
-  if (!user) throw new ApiError(404, 'User nahi mila');
+  if (!user) throw new ApiError(404, 'User not found');
 
   if (name) user.name = name;
   if (designation !== undefined) user.designation = designation;
@@ -228,7 +228,7 @@ const updateProfile = asyncHandler(async (req, res) => {
   await user.save();
 
   res.status(200).json(
-    new ApiResponse(200, 'Profile update ho gaya', {
+    new ApiResponse(200, 'Profile updated successfully', {
       user: {
         _id: user._id,
         name: user.name,
@@ -243,41 +243,41 @@ const updateProfile = asyncHandler(async (req, res) => {
 });
 
 // 7. PATCH /api/users/change-password
-// Logged in user apna password change kare
+// Logged in user changes their password
 const changePassword = asyncHandler(async (req, res) => {
   const { currentPassword, newPassword } = req.body;
 
   const user = await User.findById(req.user._id).select('+password');
-  if (!user) throw new ApiError(404, 'User nahi mila');
+  if (!user) throw new ApiError(404, 'User not found');
 
   const isMatch = await user.matchPassword(currentPassword);
   if (!isMatch) {
-    throw new ApiError(400, 'Current password galat hai');
+    throw new ApiError(400, 'Current password is incorrect');
   }
 
   user.password = newPassword;
   await user.save();
 
   res.status(200).json(
-    new ApiResponse(200, 'Password successfully change ho gaya')
+    new ApiResponse(200, 'Password changed successfully')
   );
 });
 
 // 8. PATCH /api/users/:id/suspend (Superadmin only)
-// Employee ya manager ko suspend karein
+// Suspend an employee or manager
 const suspendUser = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id);
-  if (!user) throw new ApiError(404, 'User nahi mila');
+  if (!user) throw new ApiError(404, 'User not found');
 
   if (user.role === USER_ROLES.SUPERADMIN) {
-    throw new ApiError(403, 'Super Admin ko suspend nahi kiya ja sakta');
+    throw new ApiError(403, 'Superadmin cannot be suspended');
   }
 
   user.status = USER_STATUS.SUSPENDED;
   await user.save();
 
   res.status(200).json(
-    new ApiResponse(200, `${user.name} ka account suspend kar diya gaya`, {
+    new ApiResponse(200, `${user.name}'s account has been suspended`, {
       user: { _id: user._id, name: user.name, status: user.status }
     })
   );

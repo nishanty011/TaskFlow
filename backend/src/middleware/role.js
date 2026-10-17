@@ -4,17 +4,17 @@ const ApiError = require('../utils/ApiError');
 // Usage: authorize('manager'), authorize('manager', 'superadmin'), etc.
 const authorize = (...roles) => {
   return (req, res, next) => {
-    // protect middleware se pehle req.user set hona chahiye
+    // protect middleware should set req.user
     if (!req.user) {
-      return next(new ApiError(401, 'Pehle login karein'));
+      return next(new ApiError(401, 'Please sign in first'));
     }
 
-    // Check karein ki user ka role allowed roles me hai ya nahi
+    // Check if user role is in allowed roles
     if (!roles.includes(req.user.role)) {
       return next(
         new ApiError(
           403,
-          `Aapka role (${req.user.role}) is resource ko access karne ke liye authorized nahi hai`
+          `Your role (${req.user.role}) is not authorized to access this resource`
         )
       );
     }

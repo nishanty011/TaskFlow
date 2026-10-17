@@ -41,11 +41,11 @@ const userSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: Object.values(USER_STATUS),
-      default: USER_STATUS.PENDING_EMAIL
+      default: USER_STATUS.PENDING_APPROVAL
     },
     emailVerified: {
       type: Boolean,
-      default: false
+      default: true
     },
     // Kis manager ne approve kiya
     approvedBy: {

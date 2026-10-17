@@ -35,7 +35,7 @@ export default function UserManagementPage() {
       setUsers(res.data.data?.employees || []);
       setTotal(res.data.data?.total || 0);
     } catch (err) {
-      toast.error("Users load nahi hue");
+      toast.error("Failed to load users");
     } finally {
       setLoading(false);
     }
@@ -57,10 +57,10 @@ export default function UserManagementPage() {
     try {
       setActionLoading(id);
       await approveEmployee(id);
-      toast.success("User approved!");
+      toast.success("User approved successfully!");
       fetchUsers();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Approve nahi hua");
+      toast.error(err.response?.data?.message || "Failed to approve user");
     } finally {
       setActionLoading(null);
     }
@@ -68,18 +68,18 @@ export default function UserManagementPage() {
 
   const handleReject = async () => {
     if (!rejectReason.trim()) {
-      toast.error("Rejection reason batao");
+      toast.error("Please provide a rejection reason");
       return;
     }
     try {
       setActionLoading(rejectModal._id);
       await rejectEmployee(rejectModal._id, { reason: rejectReason });
-      toast.success("User rejected");
+      toast.success("User registration rejected");
       setRejectModal(null);
       setRejectReason("");
       fetchUsers();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Reject nahi hua");
+      toast.error(err.response?.data?.message || "Failed to reject user");
     } finally {
       setActionLoading(null);
     }
@@ -90,10 +90,10 @@ export default function UserManagementPage() {
     try {
       setActionLoading(id);
       await suspendUser(id);
-      toast.success("User suspended");
+      toast.success("User suspended successfully");
       fetchUsers();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Suspend nahi hua");
+      toast.error(err.response?.data?.message || "Failed to suspend user");
     } finally {
       setActionLoading(null);
     }

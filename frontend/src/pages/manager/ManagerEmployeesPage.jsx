@@ -42,7 +42,7 @@ export default function ManagerEmployeesPage() {
       setWorkloadMap(map);
     } catch (err) {
       console.error("Failed to load department employees:", err);
-      toast.error("Department team load nahi ho payi");
+      toast.error("Failed to load department team");
     } finally {
       setLoading(false);
     }

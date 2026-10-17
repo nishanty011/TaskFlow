@@ -28,7 +28,7 @@ export default function ManagerApprovalsPage() {
       setEmployees(list);
     } catch (err) {
       console.error("Failed to load pending employees:", err);
-      toast.error("Pending approvals load nahi ho paye");
+      toast.error("Failed to load pending approvals");
       setEmployees([]);
     } finally {
       setLoading(false);
@@ -45,12 +45,12 @@ export default function ManagerApprovalsPage() {
     setIsSubmitting(true);
     try {
       await approveEmployee(selectedEmp._id);
-      toast.success(`${selectedEmp.name} ko approve kar diya gaya hai! 🎉`);
+      toast.success(`${selectedEmp.name}'s account has been approved! 🎉`);
       setIsApproveOpen(false);
       setSelectedEmp(null);
       fetchPending(); // refresh list
     } catch (err) {
-      const msg = err.response?.data?.message || "Approve karne mein error aayi";
+      const msg = err.response?.data?.message || "Failed to approve employee";
       toast.error(msg);
     } finally {
       setIsSubmitting(false);
@@ -68,13 +68,13 @@ export default function ManagerApprovalsPage() {
     setIsSubmitting(true);
     try {
       await rejectEmployee(selectedEmp._id, { reason: rejectReason });
-      toast.success(`${selectedEmp.name} ka application reject kar diya gaya`);
+      toast.success(`${selectedEmp.name}'s registration request was rejected`);
       setIsRejectOpen(false);
       setSelectedEmp(null);
       setRejectReason("");
       fetchPending(); // refresh list
     } catch (err) {
-      const msg = err.response?.data?.message || "Reject karne mein error aayi";
+      const msg = err.response?.data?.message || "Failed to reject employee";
       toast.error(msg);
     } finally {
       setIsSubmitting(false);

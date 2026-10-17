@@ -29,50 +29,65 @@ const generateOtp = () => {
 };
 
 // 1. POST /api/auth/register
-// Employee sign up karega, email verify hone tak status pending_email rahega
+// Employee sign up: email verification step removed, account goes directly to pending_approval and manager is notified
 const register = asyncHandler(async (req, res) => {
   const { name, email, password, department, designation, phone } = req.body;
 
-  // Check karein ki email already registered toh nahi hai
+  // Check if email already registered
   const existingUser = await User.findOne({ email });
   if (existingUser) {
-    throw new ApiError(409, 'Ye email address already registered hai');
+    throw new ApiError(409, 'This email address is already registered');
   }
 
-  // Selected department valid aur active hai ya nahi verify karein
+  // Selected department valid and active check
   const dept = await Department.findById(department);
   if (!dept || !dept.isActive) {
-    throw new ApiError(400, 'Selected department valid nahi hai');
+    throw new ApiError(400, 'Selected department is not valid');
   }
 
-  // 6-digit OTP create karein aur 10 minutes expiry set karein
-  const otp = generateOtp();
-  const otpHash = hashOtp(otp);
-  const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-
-  // User create karein (status: pending_email, role: employee)
+  // Create user directly with emailVerified: true and status: PENDING_APPROVAL
   const newUser = await User.create({
     name,
     email,
     password,
     department: dept._id,
     role: USER_ROLES.EMPLOYEE,
-    status: USER_STATUS.PENDING_EMAIL,
-    emailVerified: false,
+    status: USER_STATUS.PENDING_APPROVAL,
+    emailVerified: true,
     designation: designation || '',
-    phone: phone || '',
-    otpHash,
-    otpExpires
+    phone: phone || ''
   });
 
-  // Verification email bhejein
-  await sendVerificationEmail(email, name, otp);
+  // Notify Department Manager immediately for approval
+  if (dept.manager) {
+    const manager = await User.findById(dept.manager);
+    if (manager) {
+      const notification = await Notification.create({
+        user: manager._id,
+        type: NOTIFICATION_TYPE.EMPLOYEE_REGISTERED,
+        title: 'New Employee Pending Approval',
+        message: `${newUser.name} registered for the ${dept.name} department and is waiting for your approval.`,
+        link: '/manager/pending-employees'
+      });
+
+      emitToUser(manager._id.toString(), 'notification', notification);
+
+      await sendManagerApprovalNotification(
+        manager.email,
+        manager.name,
+        newUser.name,
+        dept.name
+      );
+    }
+  }
 
   res.status(201).json(
-    new ApiResponse(201, 'Registration successful. Kripya apne email par bheja gaya 6-digit OTP verify karein.', {
+    new ApiResponse(201, 'Registration successful! Your account has been submitted to your Department Manager for approval.', {
       userId: newUser._id,
+      name: newUser.name,
       email: newUser.email,
-      department: dept.name
+      department: dept.name,
+      status: newUser.status
     })
   );
 });
@@ -197,26 +212,27 @@ const login = asyncHandler(async (req, res) => {
   }
 
   // Status check - Sirf ACTIVE users login kar sakte hain
+  // Status check - If user was in pending_email, auto-upgrade to pending_approval
   if (user.status === USER_STATUS.PENDING_EMAIL) {
-    throw new ApiError(403, 'Aapka email verify nahi hua hai. Kripya pehle OTP se email verify karein.', {
-      status: USER_STATUS.PENDING_EMAIL
-    });
+    user.status = USER_STATUS.PENDING_APPROVAL;
+    user.emailVerified = true;
+    await user.save();
   }
 
   if (user.status === USER_STATUS.PENDING_APPROVAL) {
-    throw new ApiError(403, 'Aapka account abhi department manager ke approval ke liye pending hai.', {
+    throw new ApiError(403, 'Your account is pending approval by your department manager.', {
       status: USER_STATUS.PENDING_APPROVAL
     });
   }
 
   if (user.status === USER_STATUS.REJECTED) {
-    throw new ApiError(403, 'Aapka registration request department manager dwara reject kar diya gaya hai.', {
+    throw new ApiError(403, 'Your registration request was rejected by your department manager.', {
       status: USER_STATUS.REJECTED
     });
   }
 
   if (user.status === USER_STATUS.SUSPENDED) {
-    throw new ApiError(403, 'Aapka account suspend kar diya gaya hai. Administrator se sampark karein.', {
+    throw new ApiError(403, 'Your account has been suspended. Please contact your administrator.', {
       status: USER_STATUS.SUSPENDED
     });
   }

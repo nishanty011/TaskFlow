@@ -102,7 +102,7 @@ const createSubmission = asyncHandler(async (req, res) => {
     .populate('task', 'title status dueDate');
 
   res.status(201).json(
-    new ApiResponse(201, `Submission v${nextVersion} submit ho gaya`, { submission: populated })
+    new ApiResponse(201, `Deliverable v${nextVersion} submitted successfully`, { submission: populated })
   );
 });
 
@@ -239,7 +239,7 @@ const reviewSubmission = asyncHandler(async (req, res) => {
   await task.save();
 
   res.status(200).json(
-    new ApiResponse(200, status === 'approved' ? 'Submission approve ho gaya' : 'Changes requested bhej di gayi', {
+    new ApiResponse(200, status === 'approved' ? 'Deliverable approved successfully!' : 'Changes requested successfully', {
       submission,
       feedback: feedbackDoc,
       taskStatus: task.status

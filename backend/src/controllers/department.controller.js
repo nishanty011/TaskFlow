@@ -93,16 +93,16 @@ const createDepartment = asyncHandler(async (req, res) => {
   });
 
   res.status(201).json(
-    new ApiResponse(201, 'Naya department create ho gaya', { department: dept })
+    new ApiResponse(201, 'New department created successfully', { department: dept })
   );
 });
 
 // 4. PATCH /api/departments/:id (Superadmin only)
-// Department details update karein
+// Update department details
 const updateDepartment = asyncHandler(async (req, res) => {
   const dept = await Department.findById(req.params.id);
   if (!dept) {
-    throw new ApiError(404, 'Department nahi mila');
+    throw new ApiError(404, 'Department not found');
   }
 
   const { name, code, description, isActive } = req.body;
@@ -115,23 +115,23 @@ const updateDepartment = asyncHandler(async (req, res) => {
   await dept.save();
 
   res.status(200).json(
-    new ApiResponse(200, 'Department update ho gaya', { department: dept })
+    new ApiResponse(200, 'Department updated successfully', { department: dept })
   );
 });
 
 // 5. PATCH /api/departments/:id/assign-manager (Superadmin only)
-// Kisi user ko department manager assign karein
+// Assign a user as department manager
 const assignManager = asyncHandler(async (req, res) => {
   const { managerId } = req.body;
 
   const dept = await Department.findById(req.params.id);
-  if (!dept) throw new ApiError(404, 'Department nahi mila');
+  if (!dept) throw new ApiError(404, 'Department not found');
 
   const manager = await User.findById(managerId);
-  if (!manager) throw new ApiError(404, 'User nahi mila');
+  if (!manager) throw new ApiError(404, 'User not found');
 
   if (manager.role !== USER_ROLES.MANAGER && manager.role !== USER_ROLES.SUPERADMIN) {
-    throw new ApiError(400, 'Sirf manager role wale user ko department assign kiya ja sakta hai');
+    throw new ApiError(400, 'Only users with manager or superadmin role can be assigned to a department');
   }
 
   dept.manager = manager._id;
@@ -141,7 +141,7 @@ const assignManager = asyncHandler(async (req, res) => {
   await manager.save();
 
   res.status(200).json(
-    new ApiResponse(200, `${manager.name} ko ${dept.name} ka manager assign kar diya gaya`, {
+    new ApiResponse(200, `${manager.name} assigned as manager of ${dept.name}`, {
       department: dept,
       manager: { _id: manager._id, name: manager.name, email: manager.email }
     })

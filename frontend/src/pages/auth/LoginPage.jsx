@@ -27,7 +27,11 @@ export default function LoginPage() {
     handleSubmit,
     formState: { errors },
     setError,
-  } = useForm();
+  } = useForm({
+    defaultValues: {
+      email: location.state?.email || "",
+    },
+  });
 
   const onSubmit = async (formData) => {
     setIsLoading(true);
@@ -66,12 +70,24 @@ export default function LoginPage() {
       {/* Form card */}
       <div className="animate-fade-up">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6">
           <h2 className="text-2xl font-bold text-slate-900 mb-1">Welcome back</h2>
           <p className="text-slate-500 text-sm">
             Sign in to your TaskFlow account
           </p>
         </div>
+
+        {location.state?.registered && (
+          <div className="mb-6 bg-emerald-50 border border-emerald-200/80 rounded-2xl p-4 flex items-start gap-3 animate-fade-up">
+            <span className="text-xl">🎉</span>
+            <div>
+              <h4 className="text-xs font-bold text-emerald-900">Registration Complete!</h4>
+              <p className="text-xs text-emerald-700 mt-0.5 leading-relaxed">
+                Your account is pending review by your Department Manager. Once approved, you can log in directly.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">

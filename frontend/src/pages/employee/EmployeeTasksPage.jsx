@@ -37,7 +37,7 @@ export default function EmployeeTasksPage() {
       setTasks(res.data?.data?.tasks || []);
     } catch (err) {
       console.error("Failed to load employee tasks:", err);
-      toast.error("Tasks load nahi ho sake");
+      toast.error("Failed to load tasks");
     } finally {
       setLoading(false);
     }
@@ -50,7 +50,7 @@ export default function EmployeeTasksPage() {
   // Live checklist toggle with optimistic state update
   const handleToggleChecklist = async (task, item) => {
     if (task.status === "completed" || task.status === "under_review") {
-      toast.error("Checklist locked hai jab tak task under review ya complete ho");
+      toast.error("Checklist is locked while task is under review or completed");
       return;
     }
 
@@ -107,7 +107,7 @@ export default function EmployeeTasksPage() {
         }
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || "Checklist update nahi ho payi");
+      toast.error(err.response?.data?.message || "Failed to update checklist");
       // Revert
       fetchTasks();
     } finally {
@@ -122,7 +122,7 @@ export default function EmployeeTasksPage() {
       toast.success("Task started! Status changed to 'In Progress' 🚀");
       fetchTasks();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Status change nahi ho paya");
+      toast.error(err.response?.data?.message || "Failed to update status");
     }
   };
 
@@ -155,7 +155,7 @@ export default function EmployeeTasksPage() {
       }
       setCommentText("");
     } catch (err) {
-      toast.error(err.response?.data?.message || "Comment add nahi ho saka");
+      toast.error(err.response?.data?.message || "Failed to add comment");
     } finally {
       setSubmittingComment(false);
     }

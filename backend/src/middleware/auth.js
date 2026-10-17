@@ -17,39 +17,39 @@ const protect = asyncHandler(async (req, res, next) => {
   }
 
   if (!token) {
-    throw new ApiError(401, 'Authentication token missing hai. Kripya login karein.');
+    throw new ApiError(401, 'Authentication token missing. Please sign in.');
   }
 
   try {
-    // JWT verify karein
+    // Verify JWT
     const decoded = jwt.verify(
       token,
       process.env.JWT_ACCESS_SECRET || 'fallback_taskflow_access_secret'
     );
 
-    // User database se load karein
+    // Load user from database
     const user = await User.findById(decoded.id).populate('department');
     if (!user) {
-      throw new ApiError(401, 'Token se linked user exist nahi karta.');
+      throw new ApiError(401, 'User linked to this token does not exist.');
     }
 
-    // Status check - agar user suspended ya inactive hai toh access reject karein
+    // Status check
     if (user.status === USER_STATUS.SUSPENDED) {
-      throw new ApiError(403, 'Aapka account suspend kar diya gaya hai.');
+      throw new ApiError(403, 'Your account has been suspended.');
     }
 
     if (user.status !== USER_STATUS.ACTIVE) {
-      throw new ApiError(403, `Aapka account active nahi hai. Current status: ${user.status}`);
+      throw new ApiError(403, `Your account is not active. Current status: ${user.status}`);
     }
 
-    // Authenticated user ko request object me attach karein
+    // Attach user to req
     req.user = user;
     next();
   } catch (error) {
     if (error instanceof ApiError) {
       throw error;
     }
-    throw new ApiError(401, 'Token valid nahi hai ya expire ho chuka hai.');
+    throw new ApiError(401, 'Authentication token is invalid or has expired.');
   }
 });
 

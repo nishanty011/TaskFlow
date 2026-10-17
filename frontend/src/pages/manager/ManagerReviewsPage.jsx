@@ -29,7 +29,7 @@ export default function ManagerReviewsPage() {
       setSubmissions(res.data?.data?.submissions || []);
     } catch (err) {
       console.error("Failed to load submissions for review:", err);
-      toast.error("Submissions load nahi ho paye");
+      toast.error("Failed to load submissions");
     } finally {
       setLoading(false);
     }
@@ -78,7 +78,7 @@ export default function ManagerReviewsPage() {
       handleCloseReview();
       fetchSubmissionsData(); // refresh list
     } catch (err) {
-      toast.error(err.response?.data?.message || "Review submit nahi ho paya");
+      toast.error(err.response?.data?.message || "Failed to submit review");
     } finally {
       setIsSubmitting(false);
     }

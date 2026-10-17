@@ -42,7 +42,7 @@ export default function CreateTaskModal({ isOpen, onClose, onTaskCreated, defaul
           }
         } catch (err) {
           console.error("Failed to load employees for task assignment:", err);
-          toast.error("Employees load nahi ho paye");
+          toast.error("Failed to load department employees");
         } finally {
           setLoadingEmployees(false);
         }

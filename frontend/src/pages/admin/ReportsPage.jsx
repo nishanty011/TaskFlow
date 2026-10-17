@@ -20,7 +20,7 @@ export default function ReportsPage() {
       const res = await getAdminDashboard();
       setData(res.data.data);
     } catch (err) {
-      toast.error("Analytics data load nahi hua");
+      toast.error("Failed to load analytics data");
     } finally {
       setLoading(false);
     }

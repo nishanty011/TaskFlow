@@ -25,7 +25,7 @@ export default function ProfilePage() {
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     if (!name.trim()) {
-      toast.error("Name zaroori hai");
+      toast.error("Name is required");
       return;
     }
 
@@ -47,9 +47,9 @@ export default function ProfilePage() {
       if (updated && updateUser) {
         updateUser(updated);
       }
-      toast.success("Profile update ho gaya! ✨");
+      toast.success("Profile updated successfully! ✨");
     } catch (err) {
-      toast.error(err.response?.data?.message || "Profile update fail ho gaya");
+      toast.error(err.response?.data?.message || "Failed to update profile");
     } finally {
       setSavingProfile(false);
     }
@@ -58,11 +58,11 @@ export default function ProfilePage() {
   const handleChangePassword = async (e) => {
     e.preventDefault();
     if (newPassword.length < 8) {
-      toast.error("New password kam se kam 8 characters ka hona chahiye");
+      toast.error("New password must be at least 8 characters");
       return;
     }
     if (newPassword !== confirmPassword) {
-      toast.error("New password aur confirm password match nahi kar rahe");
+      toast.error("New password and confirm password do not match");
       return;
     }
 
@@ -72,12 +72,12 @@ export default function ProfilePage() {
         currentPassword,
         newPassword,
       });
-      toast.success("Password successfully change ho gaya! 🔐");
+      toast.success("Password changed successfully! 🔐");
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
     } catch (err) {
-      toast.error(err.response?.data?.message || "Password change fail ho gaya");
+      toast.error(err.response?.data?.message || "Failed to change password");
     } finally {
       setSavingPassword(false);
     }
@@ -227,7 +227,7 @@ export default function ProfilePage() {
         >
           <div>
             <h2 className="text-base font-extrabold text-slate-900">Security & Password</h2>
-            <p className="text-xs text-slate-500">Apna password regularly update karein taaki aapka account secure rahe.</p>
+            <p className="text-xs text-slate-500">Update your password regularly to keep your account secure.</p>
           </div>
 
           <div className="space-y-4 max-w-md text-xs">

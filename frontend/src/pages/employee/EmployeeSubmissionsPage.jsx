@@ -46,7 +46,7 @@ export default function EmployeeSubmissionsPage() {
       setSubmissions(res.data?.data?.submissions || []);
     } catch (err) {
       console.error("Failed to fetch my submissions:", err);
-      toast.error("Submissions load nahi ho sake");
+      toast.error("Failed to load submissions");
     } finally {
       setLoading(false);
     }
@@ -58,7 +58,7 @@ export default function EmployeeSubmissionsPage() {
 
   const handleOpenResubmit = (sub) => {
     if (!sub.task) {
-      toast.error("Task information available nahi hai");
+      toast.error("Task information is unavailable");
       return;
     }
     setResubmitTask(sub.task);

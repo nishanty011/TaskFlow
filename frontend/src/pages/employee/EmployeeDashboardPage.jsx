@@ -67,7 +67,7 @@ export default function EmployeeDashboardPage() {
       setData(res.data?.data);
     } catch (err) {
       console.error("Failed to load employee dashboard:", err);
-      toast.error("Dashboard data load nahi ho paya");
+      toast.error("Failed to load dashboard data");
     } finally {
       setLoading(false);
     }

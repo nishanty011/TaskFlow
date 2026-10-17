@@ -19,7 +19,7 @@ export default function EmployeeTeamPage() {
       setTeammates(res.data?.data?.employees || []);
     } catch (err) {
       console.error("Failed to load teammates:", err);
-      toast.error("Department team load nahi ho saki");
+      toast.error("Failed to load department team");
     } finally {
       setLoading(false);
     }

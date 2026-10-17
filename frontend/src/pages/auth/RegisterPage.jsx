@@ -71,9 +71,8 @@ export default function RegisterPage() {
         department: formData.department,
       });
 
-      toast.success("Account created! Please verify your email.");
-      // OTP page pe email carry karo
-      navigate("/verify-otp", { state: { email: formData.email } });
+      toast.success("Account created! Awaiting Department Manager approval.");
+      navigate("/login", { state: { email: formData.email, registered: true } });
     } catch (err) {
       const msg = err.response?.data?.message || "Registration failed.";
       toast.error(msg);
@@ -247,7 +246,7 @@ export default function RegisterPage() {
             <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 flex gap-2">
               <span className="text-amber-500 text-sm mt-0.5">ℹ</span>
               <p className="text-xs text-amber-700 leading-relaxed">
-                After email verification, your account will need admin approval before you can log in.
+                Your account will be reviewed and approved by your Department Manager before you can log in.
               </p>
             </div>
           </div>
