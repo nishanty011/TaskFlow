@@ -17,7 +17,8 @@ export function AuthProvider({ children }) {
         return;
       }
       const { data } = await getMe();
-      setUser(data.data);
+      const currentUser = data?.data?.user || data?.data;
+      setUser(currentUser);
     } catch {
       // token expire ya invalid — clean up karo
       localStorage.removeItem("accessToken");
@@ -34,7 +35,8 @@ export function AuthProvider({ children }) {
   // Login ke baad user set karo aur token save karo
   const login = useCallback((userData, accessToken) => {
     localStorage.setItem("accessToken", accessToken);
-    setUser(userData);
+    const currentUser = userData?.user || userData;
+    setUser(currentUser);
   }, []);
 
   // Logout — backend se bhi call karo taaki cookie clear ho

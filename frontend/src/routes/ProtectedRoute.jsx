@@ -26,7 +26,7 @@ export function ProtectedRoute({ roles = [] }) {
   }
 
   // Account pending approval — waiting page pe bhejo
-  if (user?.status === "pending") {
+  if (user?.status === "pending" || user?.status === "pending_approval") {
     return <Navigate to="/waiting-approval" replace />;
   }
 
@@ -45,7 +45,7 @@ export function GuestRoute() {
   if (loading) return <AuthLoader />;
 
   // Pehle se logged in hai — dashboard pe bhejo
-  if (isAuthenticated) {
+  if (isAuthenticated && user?.role) {
     // Role ke hisaab se redirect
     const dashboardPaths = {
       admin: "/admin/dashboard",
@@ -53,7 +53,9 @@ export function GuestRoute() {
       manager: "/manager/dashboard",
       employee: "/employee/dashboard",
     };
-    return <Navigate to={dashboardPaths[user?.role] || "/"} replace />;
+    if (dashboardPaths[user.role]) {
+      return <Navigate to={dashboardPaths[user.role]} replace />;
+    }
   }
 
   return <Outlet />;
@@ -65,13 +67,17 @@ export function PendingRoute() {
 
   if (loading) return <AuthLoader />;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (user?.status !== "pending") {
+  const isPending = user?.status === "pending" || user?.status === "pending_approval";
+  if (!isPending) {
     const dashboardPaths = {
       admin: "/admin/dashboard",
+      superadmin: "/admin/dashboard",
       manager: "/manager/dashboard",
       employee: "/employee/dashboard",
     };
-    return <Navigate to={dashboardPaths[user?.role] || "/"} replace />;
+    if (dashboardPaths[user?.role]) {
+      return <Navigate to={dashboardPaths[user.role]} replace />;
+    }
   }
 
   return <Outlet />;

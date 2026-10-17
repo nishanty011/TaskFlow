@@ -3,6 +3,7 @@ import { useAuth } from "../../context/AuthContext";
 
 const DASHBOARD_PATHS = {
   admin: "/admin/dashboard",
+  superadmin: "/admin/dashboard",
   manager: "/manager/dashboard",
   employee: "/employee/dashboard",
 };
