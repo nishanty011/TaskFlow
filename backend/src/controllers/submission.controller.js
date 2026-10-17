@@ -16,29 +16,24 @@ const {
   notifyChangesRequested
 } = require('../services/notification.service');
 
-// 1. POST /api/submissions
-// Employee task submission create kare (versioned document upload)
+// POST /api/submissions - Employee creates task submission deliverable
 const createSubmission = asyncHandler(async (req, res) => {
   const { taskId, note, progressClaimed } = req.body;
 
   const task = await Task.findById(taskId).populate('assignedBy', 'name email _id');
-  if (!task) throw new ApiError(404, 'Task nahi mila');
+  if (!task) throw new ApiError(404, 'Task not found');
 
-  // Sirf assigned employee hi submit kar sakta hai
   if (task.assignedTo.toString() !== req.user._id.toString()) {
-    throw new ApiError(403, 'Aap sirf apne assigned task par submission de sakte hain');
+    throw new ApiError(403, 'You can only submit work for your assigned tasks');
   }
 
-  // Completed task par dubara submit nahi ho sakta
   if (task.status === TASK_STATUS.COMPLETED) {
-    throw new ApiError(400, 'Ye task already complete ho chuka hai');
+    throw new ApiError(400, 'This task has already been completed');
   }
 
-  // Pichla version check karo taaki auto-increment version de sakein (v1, v2, v3...)
   const lastSubmission = await Submission.findOne({ task: task._id }).sort({ version: -1 });
   const nextVersion = lastSubmission ? lastSubmission.version + 1 : 1;
 
-  // Multer se aayi files process karein
   const uploadedFiles = [];
   if (req.files && Array.isArray(req.files)) {
     req.files.forEach((file) => {
@@ -51,7 +46,6 @@ const createSubmission = asyncHandler(async (req, res) => {
     });
   }
 
-  // Agar JSON body mein bhi direct file objects bheje gaye hon
   if (req.body.files) {
     let extraFiles = req.body.files;
     if (typeof extraFiles === 'string') {
@@ -76,14 +70,12 @@ const createSubmission = asyncHandler(async (req, res) => {
     status: SUBMISSION_STATUS.PENDING
   });
 
-  // Task ka status under_review update karo
   task.status = TASK_STATUS.UNDER_REVIEW;
   if (progressClaimed !== undefined) {
     task.progress = Math.min(100, Math.max(0, Number(progressClaimed)));
   }
   await task.save();
 
-  // Activity log record karo
   await ActivityLog.create({
     actor: req.user._id,
     action: ACTIVITY_ACTIONS.SUBMISSION_CREATED,
@@ -93,7 +85,6 @@ const createSubmission = asyncHandler(async (req, res) => {
     meta: { version: nextVersion, taskTitle: task.title }
   });
 
-  // Manager ko notification bhejo
   const managerId = task.assignedBy?._id || task.assignedBy;
   await notifyTaskSubmitted(task, req.user, managerId);
 
@@ -106,24 +97,22 @@ const createSubmission = asyncHandler(async (req, res) => {
   );
 });
 
-// 2. GET /api/submissions?taskId=...
-// Kisi task ki saari submissions version history ke saath
+// GET /api/submissions?taskId=... - Task submissions with version history
 const getTaskSubmissions = asyncHandler(async (req, res) => {
   const { taskId } = req.query;
-  if (!taskId) throw new ApiError(400, 'taskId query parameter zaroori hai');
+  if (!taskId) throw new ApiError(400, 'taskId query parameter is required');
 
   const task = await Task.findById(taskId);
-  if (!task) throw new ApiError(404, 'Task nahi mila');
+  if (!task) throw new ApiError(404, 'Task not found');
 
-  // Role aur department authorization
   if (req.user.role === USER_ROLES.EMPLOYEE) {
     if (task.assignedTo.toString() !== req.user._id.toString()) {
-      throw new ApiError(403, 'Aap sirf apne task ki submissions dekh sakte hain');
+      throw new ApiError(403, 'You can only view submissions for your own tasks');
     }
   } else if (req.user.role === USER_ROLES.MANAGER) {
     const managerDeptId = req.user.department?._id?.toString() || req.user.department?.toString();
     if (task.department.toString() !== managerDeptId) {
-      throw new ApiError(403, 'Aap sirf apne department ke task ki submissions dekh sakte hain');
+      throw new ApiError(403, 'You can only view submissions for tasks in your department');
     }
   }
 
@@ -133,36 +122,33 @@ const getTaskSubmissions = asyncHandler(async (req, res) => {
     .sort({ version: -1 });
 
   res.status(200).json(
-    new ApiResponse(200, 'Task submissions fetch ho gayi', {
+    new ApiResponse(200, 'Task submissions retrieved successfully', {
       count: submissions.length,
       submissions
     })
   );
 });
 
-// 3. GET /api/submissions/:id
-// Specific submission ki detail feedback ke saath
+// GET /api/submissions/:id - Specific submission detail with feedback
 const getSubmissionById = asyncHandler(async (req, res) => {
   const submission = await Submission.findById(req.params.id)
     .populate('task', 'title description status department assignedTo assignedBy')
     .populate('employee', 'name email avatar')
     .populate('reviewedBy', 'name email avatar');
 
-  if (!submission) throw new ApiError(404, 'Submission nahi mila');
+  if (!submission) throw new ApiError(404, 'Submission not found');
 
-  // Access check
   if (req.user.role === USER_ROLES.EMPLOYEE) {
     if (submission.employee._id.toString() !== req.user._id.toString()) {
-      throw new ApiError(403, 'Aap sirf apna submission dekh sakte hain');
+      throw new ApiError(403, 'You can only view your own submissions');
     }
   } else if (req.user.role === USER_ROLES.MANAGER) {
     const managerDeptId = req.user.department?._id?.toString() || req.user.department?.toString();
     if (submission.task.department.toString() !== managerDeptId) {
-      throw new ApiError(403, 'Aap sirf apne department ka submission dekh sakte hain');
+      throw new ApiError(403, 'You can only view submissions in your department');
     }
   }
 
-  // Is submission se jude feedback fetch karein
   const feedbacks = await Feedback.find({ submission: submission._id })
     .populate('author', 'name email avatar role')
     .sort({ createdAt: -1 });
@@ -172,30 +158,26 @@ const getSubmissionById = asyncHandler(async (req, res) => {
   );
 });
 
-// 4. PATCH /api/submissions/:id/review (Manager only)
-// Manager submission ko approve kare ya changes request kare
+// PATCH /api/submissions/:id/review - Manager reviews submission
 const reviewSubmission = asyncHandler(async (req, res) => {
   const { status, feedback, rating } = req.body;
 
   const submission = await Submission.findById(req.params.id).populate('task');
-  if (!submission) throw new ApiError(404, 'Submission nahi mila');
+  if (!submission) throw new ApiError(404, 'Submission not found');
 
   const task = await Task.findById(submission.task._id).populate('assignedTo', 'name email _id');
-  if (!task) throw new ApiError(404, 'Task nahi mila');
+  if (!task) throw new ApiError(404, 'Task not found');
 
-  // Manager department check
   const managerDeptId = req.user.department?._id?.toString() || req.user.department?.toString();
   if (task.department.toString() !== managerDeptId) {
-    throw new ApiError(403, 'Aap sirf apne department ke submission ko review kar sakte hain');
+    throw new ApiError(403, 'You can only review submissions for your department');
   }
 
-  // Submission status update
   submission.status = status;
   submission.reviewedBy = req.user._id;
   submission.reviewedAt = new Date();
   await submission.save();
 
-  // Feedback document banayein
   const feedbackDoc = await Feedback.create({
     task: task._id,
     submission: submission._id,
@@ -205,7 +187,6 @@ const reviewSubmission = asyncHandler(async (req, res) => {
     rating: rating || null
   });
 
-  // Task ka status update karein
   if (status === 'approved') {
     task.status = TASK_STATUS.COMPLETED;
     task.progress = 100;
@@ -247,8 +228,7 @@ const reviewSubmission = asyncHandler(async (req, res) => {
   );
 });
 
-// 5. GET /api/submissions/pending (Manager / Superadmin)
-// Manager apne department ke saare pending submissions dekhe
+// GET /api/submissions/pending - Pending submissions for department manager / superadmin
 const getPendingSubmissions = asyncHandler(async (req, res) => {
   const managerDeptId = req.user.department?._id || req.user.department;
   const filter = req.user.role === USER_ROLES.SUPERADMIN
@@ -271,15 +251,14 @@ const getPendingSubmissions = asyncHandler(async (req, res) => {
     .sort({ createdAt: -1 });
 
   res.status(200).json(
-    new ApiResponse(200, 'Pending submissions fetch ho gayi', {
+    new ApiResponse(200, 'Pending submissions retrieved successfully', {
       count: pendingSubmissions.length,
       submissions: pendingSubmissions
     })
   );
 });
 
-// 6. GET /api/submissions/my (Employee)
-// Current logged-in employee ke saare submissions
+// GET /api/submissions/my - Submissions by current logged-in employee
 const getMySubmissions = asyncHandler(async (req, res) => {
   const submissions = await Submission.find({ employee: req.user._id })
     .populate('task', 'title priority dueDate status progress')
@@ -287,7 +266,7 @@ const getMySubmissions = asyncHandler(async (req, res) => {
     .sort({ createdAt: -1 });
 
   res.status(200).json(
-    new ApiResponse(200, 'My submissions fetch ho gayi', {
+    new ApiResponse(200, 'Submissions retrieved successfully', {
       count: submissions.length,
       submissions
     })

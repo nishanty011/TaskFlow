@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import TaskFlowLogo from "../../components/common/TaskFlowLogo";
 
 export default function HomePage() {
   // Live interactive demo state for the 3D card preview
@@ -165,22 +166,8 @@ export default function HomePage() {
       <nav className="sticky top-0 z-50 backdrop-blur-xl bg-white/75 border-b border-slate-200/60 transition-all">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-600 via-indigo-500 to-violet-600 p-[1px] shadow-md shadow-brand-500/20 group-hover:scale-105 transition-transform">
-              <div className="w-full h-full bg-white rounded-[15px] flex items-center justify-center">
-                <span className="font-extrabold text-xl bg-gradient-to-r from-brand-600 to-violet-600 bg-clip-text text-transparent">
-                  T
-                </span>
-              </div>
-            </div>
-            <div className="flex flex-col">
-              <span className="font-bold text-xl tracking-tight text-slate-900 group-hover:text-brand-600 transition-colors">
-                TaskFlow
-              </span>
-              <span className="text-[10px] uppercase tracking-widest font-semibold text-slate-400">
-                Enterprise Suite
-              </span>
-            </div>
+          <Link to="/" className="group">
+            <TaskFlowLogo size="md" className="group-hover:scale-105 transition-transform duration-200" />
           </Link>
 
           {/* Navigation Links */}
@@ -243,20 +230,6 @@ export default function HomePage() {
           ========================================================================= */}
       <section className="relative pt-16 pb-24 md:pt-24 md:pb-32 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Top Pill */}
-          <div className="flex justify-center mb-8">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/80 border border-brand-200/80 shadow-sm backdrop-blur-md hover:border-brand-300 transition-colors cursor-default">
-              <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-xs font-semibold bg-gradient-to-r from-brand-600 to-violet-600 bg-clip-text text-transparent">
-                TaskFlow 2.0 is Live
-              </span>
-              <span className="text-slate-300">•</span>
-              <span className="text-xs text-slate-600 font-medium">
-                Automated RBAC & Department Workflows
-              </span>
-            </div>
-          </div>
-
           {/* Main Hero Header */}
           <div className="text-center max-w-4xl mx-auto">
             <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-slate-900 leading-[1.12]">
@@ -1126,11 +1099,8 @@ export default function HomePage() {
       <footer className="border-t border-white/40 bg-white/70 backdrop-blur-xl py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-brand-600 flex items-center justify-center text-white font-bold text-sm">
-              T
-            </div>
-            <span className="font-bold text-slate-800 text-lg">TaskFlow</span>
-            <span className="text-xs text-slate-400 ml-2">
+            <TaskFlowLogo size="sm" />
+            <span className="text-xs text-slate-400 ml-1">
               © {new Date().getFullYear()} TaskFlow Inc. All rights reserved.
             </span>
           </div>

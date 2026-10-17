@@ -12,7 +12,7 @@ export const Modal = ({
   maxWidth = 'max-w-lg',
   className = ''
 }) => {
-  // ESC key se close karne ke liye
+  // Close on Escape key press
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && isOpen) {

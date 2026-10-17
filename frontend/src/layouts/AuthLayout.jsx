@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
+import TaskFlowLogo from "../components/common/TaskFlowLogo";
 
-// Auth pages ke liye layout — Studio Luminous Slate theme (from user reference image)
+// Authentication pages layout
 export default function AuthLayout({ children }) {
   return (
     <div className="min-h-screen relative flex items-center justify-center p-4 overflow-hidden bg-studio-theme">
@@ -61,13 +62,8 @@ export default function AuthLayout({ children }) {
       {/* Main centered card wrapper */}
       <div className="relative z-10 w-full max-w-[460px] my-12">
         {/* Logo on top */}
-        <Link to="/" className="flex items-center justify-center gap-2.5 mb-7 group">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-brand-600 via-indigo-600 to-slate-800 flex items-center justify-center shadow-xl shadow-slate-950/25 group-hover:scale-105 transition-transform border border-white/40">
-            <span className="text-white font-black text-xl">T</span>
-          </div>
-          <span className="font-extrabold text-slate-900 text-2xl tracking-tight drop-shadow-sm">
-            TaskFlow
-          </span>
+        <Link to="/" className="flex items-center justify-center mb-7 group">
+          <TaskFlowLogo size="lg" className="group-hover:scale-105 transition-transform duration-200" />
         </Link>
 
         {/* Crisp Frosted Glass Card with Soft Ambient Shadow */}

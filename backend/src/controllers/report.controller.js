@@ -3,19 +3,17 @@ const ApiError = require('../utils/ApiError');
 const { Task, User } = require('../models');
 const { USER_ROLES, USER_STATUS, TASK_STATUS } = require('../utils/constants');
 
-// Helper: CSV row format karne ke liye (quotes aur commas handle karein)
+// Helper: format CSV row value
 const formatCSVValue = (val) => {
   if (val === null || val === undefined) return '""';
   const str = String(val).replace(/"/g, '""');
   return `"${str}"`;
 };
 
-// 1. GET /api/reports/export?type=tasks|employees
-// Manager aur superadmin ke liye CSV data export
+// GET /api/reports/export?type=tasks|employees - Export CSV report
 const exportReport = asyncHandler(async (req, res) => {
   const { type = 'tasks' } = req.query;
 
-  // Department scoping
   const deptId = req.user.department?._id || req.user.department;
   const isSuperadmin = req.user.role === USER_ROLES.SUPERADMIN;
 
@@ -122,7 +120,7 @@ const exportReport = asyncHandler(async (req, res) => {
     return res.status(200).send(csvContent);
   }
 
-  throw new ApiError(400, "Invalid export type. Supported: 'tasks' ya 'employees'");
+  throw new ApiError(400, "Invalid export type. Supported types: 'tasks' or 'employees'");
 });
 
 module.exports = {

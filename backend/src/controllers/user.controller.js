@@ -273,7 +273,7 @@ const getEmployeeById = asyncHandler(async (req, res) => {
 });
 
 // 6. PATCH /api/users/profile
-// Logged in user apna profile update kare
+// Update current user profile
 const updateProfile = asyncHandler(async (req, res) => {
   const { name, designation, phone, skills } = req.body;
 

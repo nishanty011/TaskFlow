@@ -1,8 +1,6 @@
 const nodemailer = require('nodemailer');
 
-// Nodemailer transport create karein
 const createTransporter = () => {
-  // Agar valid email credentials na ho toh console logger use karein
   if (
     !process.env.EMAIL_USER ||
     process.env.EMAIL_USER === 'your_email@gmail.com'
@@ -13,7 +11,7 @@ const createTransporter = () => {
   return nodemailer.createTransport({
     host: process.env.EMAIL_HOST || 'smtp.gmail.com',
     port: parseInt(process.env.EMAIL_PORT, 10) || 587,
-    secure: false, // TLS use hoga port 587 par
+    secure: false,
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS
@@ -21,11 +19,10 @@ const createTransporter = () => {
   });
 };
 
-// 1. Email verification OTP bhejne ka function
+// Send email verification OTP
 const sendVerificationEmail = async (email, name, otp) => {
   const transporter = createTransporter();
 
-  // Development ya bina SMTP credentials ke console par log karein
   if (!transporter) {
     console.log('\n--- EMAIL SIMULATION (Local Dev) ---');
     console.log(`To: ${email} (${name})`);
@@ -56,13 +53,12 @@ const sendVerificationEmail = async (email, name, otp) => {
     await transporter.sendMail(mailOptions);
     return true;
   } catch (error) {
-    console.error('Email send karne mein error aaya:', error.message);
-    // Dev environment mein error throw na karein
+    console.error('Error sending verification email:', error.message);
     return false;
   }
 };
 
-// 2. Department Manager ko notification email bhejna jab naya employee request kare
+// Notify department manager of pending employee registration
 const sendManagerApprovalNotification = async (managerEmail, managerName, employeeName, departmentName) => {
   const transporter = createTransporter();
 
@@ -98,12 +94,12 @@ const sendManagerApprovalNotification = async (managerEmail, managerName, employ
     await transporter.sendMail(mailOptions);
     return true;
   } catch (error) {
-    console.error('Manager notification email bhejne mein error:', error.message);
+    console.error('Error sending manager approval email:', error.message);
     return false;
   }
 };
 
-// 3. Password reset OTP email
+// Send password reset OTP email
 const sendPasswordResetEmail = async (email, name, otp) => {
   const transporter = createTransporter();
 

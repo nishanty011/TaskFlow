@@ -1,5 +1,4 @@
-// Async functions ko wrap karta hai taaki try-catch baar baar na likhna pade
-// Controller mein simply asyncHandler se wrap kar do, errors automatically catch ho jayenge
+// Wraps async route handlers to pass uncaught errors to next()
 const asyncHandler = (fn) => {
   return (req, res, next) => {
     Promise.resolve(fn(req, res, next)).catch(next);

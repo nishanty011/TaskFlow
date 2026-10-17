@@ -4,14 +4,12 @@ const ApiResponse = require('../utils/ApiResponse');
 const { ActivityLog } = require('../models');
 const { USER_ROLES } = require('../utils/constants');
 
-// 1. GET /api/activities
-// Audit trail timeline - manager apne department ka dekhe, superadmin sab dekhe
+// GET /api/activities - Retrieve audit trail timeline scoped by user role
 const getActivities = asyncHandler(async (req, res) => {
   const { entityType, action, departmentId, page = 1, limit = 25 } = req.query;
 
   const filter = {};
 
-  // Role ke hisaab se department data isolation
   if (req.user.role === USER_ROLES.MANAGER) {
     filter.department = req.user.department?._id || req.user.department;
   } else if (req.user.role === USER_ROLES.EMPLOYEE) {
@@ -34,7 +32,7 @@ const getActivities = asyncHandler(async (req, res) => {
     .limit(parseInt(limit));
 
   res.status(200).json(
-    new ApiResponse(200, 'Activities fetch ho gayi', {
+    new ApiResponse(200, 'Activities retrieved successfully', {
       total,
       page: parseInt(page),
       limit: parseInt(limit),
@@ -43,8 +41,7 @@ const getActivities = asyncHandler(async (req, res) => {
   );
 });
 
-// 2. GET /api/activities/stats
-// Activity summary by action (manager/superadmin only)
+// GET /api/activities/stats - Activity summary by action
 const getActivityStats = asyncHandler(async (req, res) => {
   const filter = {};
   if (req.user.role === USER_ROLES.MANAGER) {
@@ -62,7 +59,7 @@ const getActivityStats = asyncHandler(async (req, res) => {
   }, {});
 
   res.status(200).json(
-    new ApiResponse(200, 'Activity stats', { stats })
+    new ApiResponse(200, 'Activity stats retrieved successfully', { stats })
   );
 });
 

@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 const { TASK_STATUS, TASK_PRIORITY } = require('../utils/constants');
 
-// Attachment schema - task ke files ke liye
 const attachmentSchema = new mongoose.Schema(
   {
     url: {
@@ -24,7 +23,6 @@ const attachmentSchema = new mongoose.Schema(
   { _id: true }
 );
 
-// Checklist item schema - subtask aur progress calculation ke liye
 const checklistItemSchema = new mongoose.Schema(
   {
     title: {
@@ -45,12 +43,11 @@ const checklistItemSchema = new mongoose.Schema(
   { _id: true }
 );
 
-// Task schema - assignments, deadlines, aur status tracking ke liye
 const taskSchema = new mongoose.Schema(
   {
     title: {
       type: String,
-      required: [true, 'Task title zaroori hai'],
+      required: [true, 'Task title is required'],
       trim: true
     },
     description: {
@@ -58,23 +55,20 @@ const taskSchema = new mongoose.Schema(
       trim: true,
       default: ''
     },
-    // Task kis department ka hai
     department: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Department',
-      required: [true, 'Department zaroori hai']
+      required: [true, 'Department is required']
     },
-    // Kis manager ne task assign kiya
     assignedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: [true, 'Assigned by manager zaroori hai']
+      required: [true, 'Assigned by manager is required']
     },
-    // Kis employee ko task mila
     assignedTo: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: [true, 'Assigned to employee zaroori hai']
+      required: [true, 'Assigned to employee is required']
     },
     priority: {
       type: String,
@@ -92,13 +86,10 @@ const taskSchema = new mongoose.Schema(
     },
     dueDate: {
       type: Date,
-      required: [true, 'Due date zaroori hai']
+      required: [true, 'Due date is required']
     },
-    // Manager ke upload kiye huye attachments
     attachments: [attachmentSchema],
-    // Checklist items jisse progress calculate hoti hai
     checklist: [checklistItemSchema],
-    // Progress percentage (0 se 100 tak) - manager approval par update hoti hai
     progress: {
       type: Number,
       min: 0,
@@ -117,7 +108,6 @@ const taskSchema = new mongoose.Schema(
       type: Date,
       default: null
     },
-    // Soft delete ke liye
     isArchived: {
       type: Boolean,
       default: false
@@ -128,7 +118,6 @@ const taskSchema = new mongoose.Schema(
   }
 );
 
-// Virtual field: overdue check karne ke liye (database mein store nahi hota, compute hota hai)
 taskSchema.virtual('isOverdue').get(function () {
   if (this.status === TASK_STATUS.COMPLETED) {
     return false;
@@ -136,18 +125,12 @@ taskSchema.virtual('isOverdue').get(function () {
   return this.dueDate && new Date(this.dueDate) < new Date();
 });
 
-// JSON output mein virtuals include karein
 taskSchema.set('toJSON', { virtuals: true });
 taskSchema.set('toObject', { virtuals: true });
 
-// Indexes - department isolation aur dashboard queries ko super fast banane ke liye
-// 1. Employee dashboard: employee apne active/completed tasks fast filter kar sake
 taskSchema.index({ assignedTo: 1, status: 1 });
-// 2. Department tasks by deadline (overdue & upcoming tasks fast fetch karne ke liye)
 taskSchema.index({ department: 1, dueDate: 1 });
-// 3. Manager dashboard: department ke status-wise tasks (e.g. submitted, in_progress)
 taskSchema.index({ department: 1, status: 1 });
-// 4. Department active vs archived tasks
 taskSchema.index({ department: 1, isArchived: 1 });
 
 const Task = mongoose.model('Task', taskSchema);

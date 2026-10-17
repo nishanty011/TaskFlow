@@ -3,11 +3,10 @@ const { Task, Notification, User } = require('../models');
 const { TASK_STATUS, NOTIFICATION_TYPE } = require('../utils/constants');
 const { emitToUser } = require('../config/socket');
 
-// Overdue tasks check karein aur alert bhejein
+// Check overdue tasks and dispatch alerts
 const checkOverdueTasks = async () => {
   try {
     const now = new Date();
-    // Jo tasks abhi tak complete nahi huye aur dueDate guzar chuki hai
     const overdueTasks = await Task.find({
       dueDate: { $lt: now },
       status: { $nin: [TASK_STATUS.COMPLETED] },
@@ -19,7 +18,7 @@ const checkOverdueTasks = async () => {
     for (const task of overdueTasks) {
       if (!task.assignedTo) continue;
 
-      // Duplicate notification na jaye - check karo pichle 24 ghante mein notification gayi thi kya
+      // Prevent duplicate notification within 24 hours
       const recentNotif = await Notification.findOne({
         user: task.assignedTo._id,
         type: NOTIFICATION_TYPE.TASK_OVERDUE,
@@ -28,7 +27,6 @@ const checkOverdueTasks = async () => {
       });
 
       if (!recentNotif) {
-        // Overdue alert to employee
         const empNotif = await Notification.create({
           user: task.assignedTo._id,
           type: NOTIFICATION_TYPE.TASK_OVERDUE,
@@ -38,7 +36,6 @@ const checkOverdueTasks = async () => {
         });
         emitToUser(task.assignedTo._id.toString(), 'notification', empNotif);
 
-        // Alert to manager if task has assigner
         if (task.assignedBy) {
           const mgrNotif = await Notification.create({
             user: task.assignedBy._id,
@@ -59,7 +56,7 @@ const checkOverdueTasks = async () => {
   }
 };
 
-// Send reminder for tasks due in next 24 hours
+// Send reminder for tasks due in the next 24 hours
 const sendDeadlineReminders = async () => {
   try {
     const now = new Date();
@@ -100,21 +97,21 @@ const sendDeadlineReminders = async () => {
   }
 };
 
-// Cron jobs initialize karein
+// Initialize scheduled cron jobs
 const initCronJobs = () => {
-  // Har ghante overdue tasks check karein
+  // Check overdue tasks hourly
   cron.schedule('0 * * * *', () => {
     checkOverdueTasks();
   });
 
-  // Har roz subah 9:00 baje deadline reminders bhejein
+  // Dispatch daily deadline reminders at 9:00 AM
   cron.schedule('0 9 * * *', () => {
     sendDeadlineReminders();
   });
 };
 
 module.exports = {
-  initCronJobs,
   checkOverdueTasks,
-  sendDeadlineReminders
+  sendDeadlineReminders,
+  initCronJobs
 };

@@ -11,7 +11,7 @@ const {
   notifyComment
 } = require('../services/notification.service');
 
-// Checklist se progress calculate karo (weighted average)
+// Calculate weighted checklist progress
 const calculateProgress = (checklist) => {
   if (!checklist || checklist.length === 0) return 0;
   const totalWeight = checklist.reduce((sum, item) => sum + item.weight, 0);
@@ -22,25 +22,25 @@ const calculateProgress = (checklist) => {
 };
 
 // 1. GET /api/tasks
-// Manager apne dept ke saare tasks dekhe, employee sirf apne assigned tasks
+// Manager sees department tasks, employee sees assigned tasks
 const getTasks = asyncHandler(async (req, res) => {
   const { status, priority, search, page = 1, limit = 20, overdue } = req.query;
 
   const filter = { isArchived: false };
 
   if (req.user.role === USER_ROLES.EMPLOYEE) {
-    // Employee sirf apne tasks
+    // Scope to assigned employee tasks
     filter.assignedTo = req.user._id;
   } else if (req.user.role === USER_ROLES.MANAGER) {
-    // Manager apne department ke tasks
+    // Scope to manager department tasks
     filter.department = req.user.department?._id || req.user.department;
   }
-  // Superadmin ko koi department filter nahi
+  
 
   if (status) filter.status = status;
   if (priority) filter.priority = priority;
 
-  // Sirf overdue tasks
+  // Filter overdue tasks
   if (overdue === 'true') {
     filter.dueDate = { $lt: new Date() };
     filter.status = { $nin: [TASK_STATUS.COMPLETED] };
@@ -65,7 +65,7 @@ const getTasks = asyncHandler(async (req, res) => {
     .limit(parseInt(limit));
 
   res.status(200).json(
-    new ApiResponse(200, 'Tasks fetch ho gaye', {
+    new ApiResponse(200, 'Tasks fetched successfully', {
       total,
       page: parseInt(page),
       limit: parseInt(limit),
@@ -75,28 +75,28 @@ const getTasks = asyncHandler(async (req, res) => {
 });
 
 // 2. GET /api/tasks/:id
-// Specific task ki full detail
+// Get full task details
 const getTaskById = asyncHandler(async (req, res) => {
   const task = await Task.findById(req.params.id)
     .populate('assignedTo', 'name email avatar designation department')
     .populate('assignedBy', 'name email avatar')
     .populate('department', 'name code');
 
-  if (!task) throw new ApiError(404, 'Task nahi mila');
+  if (!task) throw new ApiError(404, 'Task not found');
 
-  // Access check - employee sirf apna task dekhe, manager sirf apne dept ka
+  // Verify task access permissions
   if (req.user.role === USER_ROLES.EMPLOYEE) {
     if (task.assignedTo._id.toString() !== req.user._id.toString()) {
-      throw new ApiError(403, 'Aap sirf apne assigned tasks dekh sakte hain');
+      throw new ApiError(403, 'You can only view your own assigned tasks');
     }
   } else if (req.user.role === USER_ROLES.MANAGER) {
     const managerDeptId = req.user.department?._id?.toString() || req.user.department?.toString();
     if (task.department._id.toString() !== managerDeptId) {
-      throw new ApiError(403, 'Aap sirf apne department ke tasks dekh sakte hain');
+      throw new ApiError(403, 'You can only view tasks within your department');
     }
   }
 
-  // Comments bhi saath mein bhejo
+  // Include task comments
   const comments = await Comment.find({ task: task._id })
     .populate('author', 'name email avatar role')
     .populate('mentions', 'name email')
@@ -108,23 +108,23 @@ const getTaskById = asyncHandler(async (req, res) => {
 });
 
 // 3. POST /api/tasks (Manager only)
-// Naya task create karo aur employee ko assign karo
+// Create new task and assign to employee
 const createTask = asyncHandler(async (req, res) => {
   const { title, description, assignedTo, priority, dueDate, startDate, estimatedHours, tags, attachments, checklist } = req.body;
 
   const managerDeptId = req.user.department?._id || req.user.department;
 
-  // Employee exist karta hai aur is department ka hai ye check karo
+  // Validate employee existence and department
   const employee = await User.findById(assignedTo).populate('department');
-  if (!employee) throw new ApiError(404, 'Employee nahi mila');
+  if (!employee) throw new ApiError(404, 'Employee not found');
 
   const empDeptId = employee.department?._id?.toString() || employee.department?.toString();
   if (managerDeptId?.toString() !== empDeptId) {
-    throw new ApiError(403, 'Aap sirf apne department ke employees ko task assign kar sakte hain');
+    throw new ApiError(403, 'You can only assign tasks to employees in your department');
   }
 
   if (employee.role !== USER_ROLES.EMPLOYEE) {
-    throw new ApiError(400, 'Sirf employees ko task assign kiya ja sakta hai');
+    throw new ApiError(400, 'Tasks can only be assigned to employees');
   }
 
   const parsedChecklist = (checklist || []).map((item) => ({
@@ -149,7 +149,7 @@ const createTask = asyncHandler(async (req, res) => {
     progress: 0
   });
 
-  // Activity log aur employee notification
+  // Record activity log and dispatch notification
   await ActivityLog.create({
     actor: req.user._id,
     action: ACTIVITY_ACTIONS.TASK_CREATED,
@@ -171,19 +171,19 @@ const createTask = asyncHandler(async (req, res) => {
 });
 
 // 4. PATCH /api/tasks/:id (Manager only)
-// Task ki details update karo (title, description, priority, dueDate, etc.)
+// Update task details
 const updateTask = asyncHandler(async (req, res) => {
   const task = await Task.findById(req.params.id);
-  if (!task) throw new ApiError(404, 'Task nahi mila');
+  if (!task) throw new ApiError(404, 'Task not found');
 
   const managerDeptId = req.user.department?._id?.toString() || req.user.department?.toString();
   if (task.department.toString() !== managerDeptId) {
-    throw new ApiError(403, 'Aap sirf apne department ke tasks update kar sakte hain');
+    throw new ApiError(403, 'You can only update tasks in your department');
   }
 
-  // Completed task ko update nahi kar sakte
+  
   if (task.status === TASK_STATUS.COMPLETED) {
-    throw new ApiError(400, 'Completed task ko update nahi kiya ja sakta');
+    throw new ApiError(400, 'Completed tasks cannot be updated');
   }
 
   const { title, description, priority, dueDate, startDate, estimatedHours, tags, attachments } = req.body;
@@ -301,26 +301,26 @@ const updateChecklist = asyncHandler(async (req, res) => {
 });
 
 // 7. PATCH /api/tasks/:id/review (Manager only)
-// Manager submitted task ko approve ya changes request kare
+// Manager reviews submitted task
 const reviewTask = asyncHandler(async (req, res) => {
   const { action, feedback } = req.body;
 
   if (!['approve', 'request_changes'].includes(action)) {
-    throw new ApiError(400, "Action 'approve' ya 'request_changes' hona chahiye");
+    throw new ApiError(400, "Action must be either 'approve' or 'request_changes'");
   }
 
   const task = await Task.findById(req.params.id)
     .populate('assignedTo', 'name email _id');
 
-  if (!task) throw new ApiError(404, 'Task nahi mila');
+  if (!task) throw new ApiError(404, 'Task not found');
 
   const managerDeptId = req.user.department?._id?.toString() || req.user.department?.toString();
   if (task.department.toString() !== managerDeptId) {
-    throw new ApiError(403, 'Aap sirf apne department ke tasks review kar sakte hain');
+    throw new ApiError(403, 'You can only review tasks in your department');
   }
 
   if (task.status !== TASK_STATUS.UNDER_REVIEW) {
-    throw new ApiError(400, 'Sirf under_review status ke tasks ka review ho sakta hai');
+    throw new ApiError(400, 'Only tasks under review can be reviewed');
   }
 
   if (action === 'approve') {
@@ -430,7 +430,7 @@ const archiveTask = asyncHandler(async (req, res) => {
 });
 
 // 10. GET /api/tasks/stats
-// Dashboard ke liye stats - manager ke liye dept overview, employee ke liye apna summary
+// Aggregate task statistics
 const getTaskStats = asyncHandler(async (req, res) => {
   const isEmployee = req.user.role === USER_ROLES.EMPLOYEE;
   const matchFilter = isEmployee
@@ -464,7 +464,7 @@ const getTaskStats = asyncHandler(async (req, res) => {
     status: { $nin: [TASK_STATUS.COMPLETED] }
   });
 
-  // Status ko object format mein convert karo
+  // Convert status counts to key-value map
   const stats = statusCounts.reduce((acc, s) => {
     acc[s._id] = s.count;
     return acc;
@@ -486,17 +486,17 @@ const getTaskTimeline = asyncHandler(async (req, res) => {
     .populate('assignedTo', 'name email avatar designation')
     .populate('assignedBy', 'name email avatar');
 
-  if (!task) throw new ApiError(404, 'Task nahi mila');
+  if (!task) throw new ApiError(404, 'Task not found');
 
   // Access check
   if (req.user.role === USER_ROLES.EMPLOYEE) {
     if (task.assignedTo._id.toString() !== req.user._id.toString()) {
-      throw new ApiError(403, 'Aap sirf apne task ka timeline dekh sakte hain');
+      throw new ApiError(403, 'You can only view the timeline for your assigned tasks');
     }
   } else if (req.user.role === USER_ROLES.MANAGER) {
     const managerDeptId = req.user.department?._id?.toString() || req.user.department?.toString();
     if (task.department.toString() !== managerDeptId) {
-      throw new ApiError(403, 'Aap sirf apne department ke task ka timeline dekh sakte hain');
+      throw new ApiError(403, 'You can only view timelines for tasks in your department');
     }
   }
 

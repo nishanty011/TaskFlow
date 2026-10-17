@@ -1,17 +1,16 @@
 const mongoose = require('mongoose');
 
-// Department schema - har department ka ek document hoga
 const departmentSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, 'Department name zaroori hai'],
+      required: [true, 'Department name is required'],
       unique: true,
       trim: true
     },
     code: {
       type: String,
-      required: [true, 'Department code zaroori hai'],
+      required: [true, 'Department code is required'],
       unique: true,
       uppercase: true,
       trim: true
@@ -21,13 +20,11 @@ const departmentSchema = new mongoose.Schema(
       trim: true,
       default: ''
     },
-    // Department ka assigned manager (User reference)
     manager: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       default: null
     },
-    // Soft delete ya status track karne ke liye
     isActive: {
       type: Boolean,
       default: true

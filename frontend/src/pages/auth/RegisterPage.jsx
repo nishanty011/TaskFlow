@@ -6,7 +6,7 @@ import AuthLayout from "../../layouts/AuthLayout";
 import { registerUser } from "../../api/auth.api";
 import { getPublicDepartments } from "../../api/department.api";
 
-// Password strength check karo
+// Password strength evaluator
 function getPasswordStrength(password) {
   if (!password) return { score: 0, label: "", color: "" };
   let score = 0;
@@ -40,7 +40,7 @@ export default function RegisterPage() {
     formState: { errors },
   } = useForm();
 
-  // Departments load karo (public endpoint bina auth ke)
+  // Load available departments
   useEffect(() => {
     const fetchDepts = async () => {
       try {
@@ -57,7 +57,6 @@ export default function RegisterPage() {
     fetchDepts();
   }, []);
 
-  // Password value watch karo strength ke liye
   const watchedPassword = watch("password", "");
   const strength = getPasswordStrength(watchedPassword);
 

@@ -1,5 +1,4 @@
-// NoSQL injection protection middleware
-// Request body, query, aur params se '$' aur '.' wale keys sanitize karta hai
+// NoSQL injection sanitization middleware
 const cleanInput = (obj) => {
   if (!obj || typeof obj !== 'object') return obj;
 
@@ -9,7 +8,6 @@ const cleanInput = (obj) => {
 
   const cleaned = {};
   for (const [key, val] of Object.entries(obj)) {
-    // '$' se start hone wale operators ($gt, $ne, $where etc.) ko filter out karein
     if (key.startsWith('$') || key.includes('.')) {
       continue;
     }
@@ -21,7 +19,6 @@ const cleanInput = (obj) => {
 const sanitize = (req, res, next) => {
   if (req.body) req.body = cleanInput(req.body);
   if (req.params) req.params = cleanInput(req.params);
-  // req.query may have getter, so we sanitize property-by-property
   if (req.query) {
     for (const key of Object.keys(req.query)) {
       if (key.startsWith('$') || key.includes('.')) {

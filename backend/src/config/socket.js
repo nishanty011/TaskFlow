@@ -2,7 +2,7 @@ const { Server } = require('socket.io');
 
 let io = null;
 
-// Socket.io initialize karne ka function
+// Initialize Socket.io server
 const initSocket = (httpServer) => {
   io = new Server(httpServer, {
     cors: {
@@ -12,44 +12,39 @@ const initSocket = (httpServer) => {
   });
 
   io.on('connection', (socket) => {
-    // Jab user connect kare toh apne user room me join kare
     socket.on('join_user', (userId) => {
       if (userId) {
         socket.join(`user_${userId}`);
       }
     });
 
-    // Department-level notifications ke liye department room join kare
     socket.on('join_department', (deptId) => {
       if (deptId) {
         socket.join(`dept_${deptId}`);
       }
     });
 
-    socket.on('disconnect', () => {
-      // Disconnected
-    });
+    socket.on('disconnect', () => {});
   });
 
   return io;
 };
 
-// IO instance lene ka helper
 const getIO = () => {
   if (!io) {
-    throw new Error('Socket.io initialize nahi hua hai!');
+    throw new Error('Socket.io has not been initialized');
   }
   return io;
 };
 
-// Specific user ko notification bhejne ka helper
+// Emit event to a specific user room
 const emitToUser = (userId, event, data) => {
   if (io) {
     io.to(`user_${userId}`).emit(event, data);
   }
 };
 
-// Pure department ko notification bhejne ka helper
+// Emit event to an entire department room
 const emitToDepartment = (deptId, event, data) => {
   if (io) {
     io.to(`dept_${deptId}`).emit(event, data);

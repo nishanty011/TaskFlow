@@ -1,5 +1,6 @@
 import { NavLink, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import TaskFlowLogo from "../common/TaskFlowLogo";
 
 export default function Sidebar({ isCollapsed, onToggleCollapse }) {
   const { user } = useAuth();
@@ -48,19 +49,17 @@ export default function Sidebar({ isCollapsed, onToggleCollapse }) {
       {/* Top: Logo & App Title */}
       <div>
         <div className="h-16 px-4 flex items-center justify-between border-b border-slate-100">
-          <Link to="/" className="flex items-center gap-3 overflow-hidden group">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-600 via-indigo-600 to-violet-600 flex items-center justify-center text-white font-black text-lg shadow-md shadow-brand-500/20 group-hover:scale-105 transition-transform flex-shrink-0">
-              T
-            </div>
+          <Link to="/" className="flex items-center gap-2 overflow-hidden group">
+            {/* Always show icon; hide text when collapsed */}
+            <TaskFlowLogo
+              size="sm"
+              showText={!isCollapsed}
+              className="group-hover:opacity-90 transition-opacity"
+            />
             {!isCollapsed && (
-              <div className="flex flex-col truncate">
-                <span className="font-extrabold text-base tracking-tight text-slate-900 group-hover:text-brand-600 transition-colors">
-                  TaskFlow
-                </span>
-                <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
-                  {role} Portal
-                </span>
-              </div>
+              <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 ml-0.5 truncate">
+                {role} Portal
+              </span>
             )}
           </Link>
 

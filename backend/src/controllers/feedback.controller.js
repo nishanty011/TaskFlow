@@ -5,24 +5,22 @@ const { Feedback, Task, ActivityLog, Notification } = require('../models');
 const { USER_ROLES, ACTIVITY_ACTIONS, ENTITY_TYPES, NOTIFICATION_TYPE } = require('../utils/constants');
 const { emitToUser } = require('../config/socket');
 
-// 1. GET /api/feedbacks?taskId=...
-// Kisi task ke saare feedback fetch karein
+// GET /api/feedbacks?taskId=... - Retrieve feedback for a task
 const getFeedbacksByTask = asyncHandler(async (req, res) => {
   const { taskId } = req.query;
-  if (!taskId) throw new ApiError(400, 'taskId query parameter zaroori hai');
+  if (!taskId) throw new ApiError(400, 'taskId query parameter is required');
 
   const task = await Task.findById(taskId);
-  if (!task) throw new ApiError(404, 'Task nahi mila');
+  if (!task) throw new ApiError(404, 'Task not found');
 
-  // Role check
   if (req.user.role === USER_ROLES.EMPLOYEE) {
     if (task.assignedTo.toString() !== req.user._id.toString()) {
-      throw new ApiError(403, 'Aap sirf apne task ka feedback dekh sakte hain');
+      throw new ApiError(403, 'You can only view feedback for your own tasks');
     }
   } else if (req.user.role === USER_ROLES.MANAGER) {
     const managerDeptId = req.user.department?._id?.toString() || req.user.department?.toString();
     if (task.department.toString() !== managerDeptId) {
-      throw new ApiError(403, 'Aap sirf apne department ke task ka feedback dekh sakte hain');
+      throw new ApiError(403, 'You can only view feedback for tasks in your department');
     }
   }
 
@@ -32,24 +30,23 @@ const getFeedbacksByTask = asyncHandler(async (req, res) => {
     .sort({ createdAt: -1 });
 
   res.status(200).json(
-    new ApiResponse(200, 'Task feedbacks fetch ho gaye', {
+    new ApiResponse(200, 'Task feedback retrieved successfully', {
       count: feedbacks.length,
       feedbacks
     })
   );
 });
 
-// 2. POST /api/feedbacks (Manager only)
-// Manager task ya submission par direct feedback de sake
+// POST /api/feedbacks - Create feedback (Manager only)
 const createFeedback = asyncHandler(async (req, res) => {
   const { taskId, submissionId, type, message, rating } = req.body;
 
   const task = await Task.findById(taskId).populate('assignedTo', 'name email _id');
-  if (!task) throw new ApiError(404, 'Task nahi mila');
+  if (!task) throw new ApiError(404, 'Task not found');
 
   const managerDeptId = req.user.department?._id?.toString() || req.user.department?.toString();
   if (task.department.toString() !== managerDeptId) {
-    throw new ApiError(403, 'Aap sirf apne department ke tasks par feedback de sakte hain');
+    throw new ApiError(403, 'You can only submit feedback for tasks in your department');
   }
 
   const feedback = await Feedback.create({
@@ -61,7 +58,6 @@ const createFeedback = asyncHandler(async (req, res) => {
     rating: rating || null
   });
 
-  // Notify employee of feedback received
   const notification = await Notification.create({
     user: task.assignedTo._id,
     type: NOTIFICATION_TYPE.COMMENT_ADDED,
@@ -89,25 +85,23 @@ const createFeedback = asyncHandler(async (req, res) => {
   );
 });
 
-// 3. GET /api/feedbacks/:id
-// Specific feedback detail
+// GET /api/feedbacks/:id - Retrieve specific feedback detail
 const getFeedbackById = asyncHandler(async (req, res) => {
   const feedback = await Feedback.findById(req.params.id)
     .populate('author', 'name email avatar role')
     .populate('task', 'title department assignedTo')
     .populate('submission', 'version status');
 
-  if (!feedback) throw new ApiError(404, 'Feedback nahi mila');
+  if (!feedback) throw new ApiError(404, 'Feedback not found');
 
-  // Department check
   if (req.user.role === USER_ROLES.EMPLOYEE) {
     if (feedback.task.assignedTo.toString() !== req.user._id.toString()) {
-      throw new ApiError(403, 'Aap sirf apna feedback dekh sakte hain');
+      throw new ApiError(403, 'You can only view your own task feedback');
     }
   } else if (req.user.role === USER_ROLES.MANAGER) {
     const managerDeptId = req.user.department?._id?.toString() || req.user.department?.toString();
     if (feedback.task.department.toString() !== managerDeptId) {
-      throw new ApiError(403, 'Aap sirf apne department ka feedback dekh sakte hain');
+      throw new ApiError(403, 'You can only view feedback for your department');
     }
   }
 

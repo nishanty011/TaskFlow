@@ -1,17 +1,14 @@
 const ApiError = require('../utils/ApiError');
 
-// Global error handler - saare errors yahan aake handle hote hain
-// Ye middleware Express ke error handling ka last point hai
+// Global error handler middleware
 const errorHandler = (err, req, res, next) => {
-
-  // Agar hamara custom ApiError hai toh uski values use karo
   let error = {
     statusCode: err.statusCode || 500,
-    message: err.message || 'Server mein kuch gadbad ho gayi',
+    message: err.message || 'Internal server error',
     errors: err.errors || []
   };
 
-  // Mongoose validation error - jab required field missing ho ya enum match na kare
+  // Mongoose validation error
   if (err.name === 'ValidationError') {
     const messages = Object.values(err.errors).map((val) => val.message);
     error.statusCode = 400;
@@ -19,31 +16,30 @@ const errorHandler = (err, req, res, next) => {
     error.errors = messages;
   }
 
-  // Mongoose duplicate key error - jab unique field ki value already exist kare
+  // Mongoose duplicate key error
   if (err.code === 11000) {
     const field = Object.keys(err.keyValue)[0];
     error.statusCode = 409;
     error.message = `${field} already exists`;
   }
 
-  // Mongoose bad ObjectId - jab galat format ka ID bheja jaye
+  // Mongoose invalid ObjectId
   if (err.name === 'CastError') {
     error.statusCode = 400;
     error.message = `Invalid ${err.path}: ${err.value}`;
   }
 
-  // JWT token errors
+  // JWT errors
   if (err.name === 'JsonWebTokenError') {
     error.statusCode = 401;
-    error.message = 'Token valid nahi hai, dobara login karo';
+    error.message = 'Invalid authentication token. Please sign in again.';
   }
 
   if (err.name === 'TokenExpiredError') {
     error.statusCode = 401;
-    error.message = 'Token expire ho gaya hai, dobara login karo';
+    error.message = 'Authentication token has expired. Please sign in again.';
   }
 
-  // Development mein full error stack dikhao, production mein nahi
   const response = {
     success: false,
     message: error.message,

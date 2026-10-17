@@ -11,7 +11,6 @@ export default function VerifyOtpPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Email register page se carry karo
   const email = location.state?.email || "";
 
   const [digits, setDigits] = useState(Array(OTP_LENGTH).fill(""));
@@ -23,14 +22,14 @@ export default function VerifyOtpPage() {
 
   const inputRefs = useRef([]);
 
-  // Email nahi mila toh register pe wapas bhejo
+  // Redirect if email is not present
   useEffect(() => {
     if (!email) {
       navigate("/register", { replace: true });
     }
   }, [email, navigate]);
 
-  // Resend countdown timer
+  // Resend cooldown timer
   useEffect(() => {
     if (countdown <= 0) {
       setCanResend(true);
@@ -40,29 +39,28 @@ export default function VerifyOtpPage() {
     return () => clearTimeout(timer);
   }, [countdown]);
 
-  // Ek digit type ho toh next input pe focus karo
+  // Handle single digit input
   const handleChange = (index, value) => {
-    const cleaned = value.replace(/[^0-9]/g, "").slice(-1); // sirf numbers
+    const cleaned = value.replace(/[^0-9]/g, "").slice(-1);
     setHasError(false);
 
     const updated = [...digits];
     updated[index] = cleaned;
     setDigits(updated);
 
-    // Next box pe jaao
     if (cleaned && index < OTP_LENGTH - 1) {
       inputRefs.current[index + 1]?.focus();
     }
   };
 
-  // Backspace pe previous input pe jaao
+  // Focus previous input on backspace
   const handleKeyDown = (index, e) => {
     if (e.key === "Backspace" && !digits[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
     }
   };
 
-  // Paste support — copy kiya hua OTP directly fill ho jaye
+  // Support pasting complete OTP code
   const handlePaste = (e) => {
     e.preventDefault();
     const pasted = e.clipboardData.getData("text").replace(/[^0-9]/g, "").slice(0, OTP_LENGTH);
@@ -85,7 +83,6 @@ export default function VerifyOtpPage() {
       setIsSuccess(true);
       toast.success("Email verified! 🎉");
 
-      // 2 second baad waiting page pe bhejo
       setTimeout(() => {
         navigate("/waiting-approval", { replace: true });
       }, 2000);
@@ -93,7 +90,7 @@ export default function VerifyOtpPage() {
       const msg = err.response?.data?.message || "Invalid or expired OTP";
       toast.error(msg);
       setHasError(true);
-      setDigits(Array(OTP_LENGTH).fill("")); // clear karo
+      setDigits(Array(OTP_LENGTH).fill(""));
       inputRefs.current[0]?.focus();
     } finally {
       setIsLoading(false);

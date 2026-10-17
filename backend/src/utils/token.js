@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 
-// Short-lived Access Token (15 minutes) generate karne ka function
+// Generate short-lived access token
 const generateAccessToken = (user) => {
   return jwt.sign(
     {
@@ -15,7 +15,7 @@ const generateAccessToken = (user) => {
   );
 };
 
-// Long-lived Refresh Token (7 days) generate karne ka function
+// Generate long-lived refresh token
 const generateRefreshToken = (user) => {
   return jwt.sign(
     {
@@ -28,19 +28,19 @@ const generateRefreshToken = (user) => {
   );
 };
 
-// Refresh token ko httpOnly cookie mein store karne ka helper
+// Store refresh token in HTTP-only cookie
 const setRefreshTokenCookie = (res, refreshToken) => {
   const isProduction = process.env.NODE_ENV === 'production';
 
   res.cookie('refreshToken', refreshToken, {
-    httpOnly: true, // XSS attack se bachane ke liye (JS access nahi kar sakti)
-    secure: isProduction, // Production mein HTTPS par hi bhejna
-    sameSite: isProduction ? 'none' : 'lax', // CSRF protection
-    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days in milliseconds
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000
   });
 };
 
-// Refresh token cookie clear karne ka helper (logout ke waqt)
+// Clear refresh token cookie on logout
 const clearRefreshTokenCookie = (res) => {
   const isProduction = process.env.NODE_ENV === 'production';
 

@@ -4,20 +4,18 @@ const ApiResponse = require('../utils/ApiResponse');
 const { Department, User } = require('../models');
 const { USER_ROLES, USER_STATUS } = require('../utils/constants');
 
-// 0. GET /api/departments/public
-// Registration form ke dropdown ke liye public list bina auth ke
+// GET /api/departments/public - Public departments list for registration dropdown
 const getPublicDepartments = asyncHandler(async (req, res) => {
   const departments = await Department.find({ isActive: true })
     .select('_id name code description')
     .sort({ name: 1 });
 
   res.status(200).json(
-    new ApiResponse(200, 'Public departments fetch ho gaye', { departments })
+    new ApiResponse(200, 'Public departments retrieved successfully', { departments })
   );
 });
 
-// 1. GET /api/departments
-// Superadmin ke liye saare departments, manager ke liye sirf apna
+// GET /api/departments - Departments list scoped by role
 const getDepartments = asyncHandler(async (req, res) => {
   const filter = req.user.role === USER_ROLES.SUPERADMIN
     ? {}
@@ -27,29 +25,26 @@ const getDepartments = asyncHandler(async (req, res) => {
     .populate('manager', 'name email designation avatar');
 
   res.status(200).json(
-    new ApiResponse(200, 'Departments fetch ho gaye', { departments })
+    new ApiResponse(200, 'Departments retrieved successfully', { departments })
   );
 });
 
-// 2. GET /api/departments/:id
-// Specific department details with employee count
+// GET /api/departments/:id - Department detail with employee count
 const getDepartmentById = asyncHandler(async (req, res) => {
   const dept = await Department.findById(req.params.id)
     .populate('manager', 'name email designation avatar phone');
 
   if (!dept) {
-    throw new ApiError(404, 'Department nahi mila');
+    throw new ApiError(404, 'Department not found');
   }
 
-  // Department scope check - manager sirf apna department dekh sake
   if (
     req.user.role === USER_ROLES.MANAGER &&
     dept._id.toString() !== req.user.department?._id?.toString()
   ) {
-    throw new ApiError(403, 'Aap sirf apne department ka detail dekh sakte hain');
+    throw new ApiError(403, 'You can only view details of your own department');
   }
 
-  // Active employees count fetch karein
   const employeeCount = await User.countDocuments({
     department: dept._id,
     role: USER_ROLES.EMPLOYEE,
@@ -70,8 +65,7 @@ const getDepartmentById = asyncHandler(async (req, res) => {
   );
 });
 
-// 3. POST /api/departments (Superadmin only)
-// Naya department create karein
+// POST /api/departments - Create new department (Superadmin only)
 const createDepartment = asyncHandler(async (req, res) => {
   const { name, code, description } = req.body;
 
@@ -83,7 +77,7 @@ const createDepartment = asyncHandler(async (req, res) => {
   });
 
   if (existing) {
-    throw new ApiError(409, 'Is naam ya code ka department already exist karta hai');
+    throw new ApiError(409, 'A department with this name or code already exists');
   }
 
   const dept = await Department.create({
@@ -97,8 +91,7 @@ const createDepartment = asyncHandler(async (req, res) => {
   );
 });
 
-// 4. PATCH /api/departments/:id (Superadmin only)
-// Update department details
+// PATCH /api/departments/:id - Update department details (Superadmin only)
 const updateDepartment = asyncHandler(async (req, res) => {
   const dept = await Department.findById(req.params.id);
   if (!dept) {
@@ -119,8 +112,7 @@ const updateDepartment = asyncHandler(async (req, res) => {
   );
 });
 
-// 5. PATCH /api/departments/:id/assign-manager (Superadmin only)
-// Assign a user as department manager
+// PATCH /api/departments/:id/assign-manager - Assign department manager (Superadmin only)
 const assignManager = asyncHandler(async (req, res) => {
   const { managerId } = req.body;
 

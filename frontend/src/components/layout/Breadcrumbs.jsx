@@ -19,11 +19,14 @@ const ROUTE_LABELS = {
   settings: "Settings",
 };
 
+// Segments that are role prefixes without their own route — render as plain text
+const NON_LINK_SEGMENTS = new Set(["admin", "manager", "employee"]);
+
 export default function Breadcrumbs() {
   const location = useLocation();
   const pathnames = location.pathname.split("/").filter((x) => x);
 
-  // Agar root ya style guide par hain toh breadcrumb na dikhaye
+  // Hide breadcrumbs on root path
   if (pathnames.length === 0) return null;
 
   return (
@@ -44,13 +47,19 @@ export default function Breadcrumbs() {
         {pathnames.map((value, index) => {
           const to = `/${pathnames.slice(0, index + 1).join("/")}`;
           const isLast = index === pathnames.length - 1;
+          const isNonLink = NON_LINK_SEGMENTS.has(value.toLowerCase());
           const label = ROUTE_LABELS[value.toLowerCase()] || decodeURIComponent(value);
 
           return (
             <li key={to} className="flex items-center gap-1.5">
               <span className="text-slate-300">/</span>
-              {isLast ? (
-                <span className="text-slate-800 font-semibold capitalize truncate max-w-[150px]">
+              {isLast || isNonLink ? (
+                // Last segment or role-prefix segment: plain text, not a link
+                <span
+                  className={`capitalize truncate max-w-[150px] ${
+                    isLast ? "text-slate-800 font-semibold" : "text-slate-400"
+                  }`}
+                >
                   {label}
                 </span>
               ) : (

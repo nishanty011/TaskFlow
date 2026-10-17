@@ -1,17 +1,14 @@
 import axios from "axios";
 
-// Axios instance — base URL backend API se
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
-  withCredentials: true, // cookies (refresh token) ke liye
+  withCredentials: true,
   headers: { "Content-Type": "application/json" },
 });
 
-// ek flag taaki sirf ek baar token refresh ho
 let isRefreshing = false;
 let failedQueue = [];
 
-// failed requests ko queue mein daalo aur token milne pe retry karo
 const processQueue = (error, token = null) => {
   failedQueue.forEach((prom) => {
     if (error) {
@@ -23,7 +20,7 @@ const processQueue = (error, token = null) => {
   failedQueue = [];
 };
 
-// request interceptor — access token har request ke header mein lagao
+// Attach access token to outgoing requests
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("accessToken");
@@ -35,13 +32,12 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// response interceptor — 401 milne pe token refresh karo aur retry karo
+// Response interceptor: refresh expired token on 401
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    // Agar request auth endpoint ki hai (login, register, etc.), toh token refresh try mat karo — direct reject karo
     const isAuthRoute =
       originalRequest?.url?.includes("/auth/login") ||
       originalRequest?.url?.includes("/auth/register") ||
@@ -54,10 +50,8 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // agar 401 aaya aur ye request already retry nahi ho rahi
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
-        // pehle se refresh ho raha hai toh queue mein daal do
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
@@ -89,7 +83,6 @@ api.interceptors.response.use(
         processQueue(refreshError, null);
         localStorage.removeItem("accessToken");
 
-        // Sirf protected pages par hone par hi login pe bhejo taaki infinite reload loop na bane
         const publicPaths = ["/", "/login", "/register", "/verify-otp", "/forgot-password", "/reset-password", "/style-guide"];
         const currentPath = window.location.pathname;
         if (!publicPaths.includes(currentPath)) {

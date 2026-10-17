@@ -10,7 +10,6 @@ const validate = (schema) => (req, res, next) => {
     });
 
     if (!parsed.success) {
-      // Zod ke errors ko user-friendly format me extract karein
       const errors = parsed.error.issues.map((issue) => {
         const field = issue.path.slice(1).join('.');
         return `${field ? field + ': ' : ''}${issue.message}`;
@@ -19,7 +18,6 @@ const validate = (schema) => (req, res, next) => {
       return next(new ApiError(400, 'Validation Error', errors));
     }
 
-    // Validated data ko assign karein
     req.validatedBody = parsed.data.body;
     req.validatedQuery = parsed.data.query;
     req.validatedParams = parsed.data.params;

@@ -1,5 +1,6 @@
 import { NavLink, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import TaskFlowLogo from "../common/TaskFlowLogo";
 
 export default function MobileDrawer({ isOpen, onClose }) {
   const { user } = useAuth();
@@ -53,11 +54,8 @@ export default function MobileDrawer({ isOpen, onClose }) {
         <div>
           {/* Top Header */}
           <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-            <Link to="/" onClick={onClose} className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-violet-600 flex items-center justify-center text-white font-extrabold text-base shadow-md">
-                T
-              </div>
-              <span className="font-extrabold text-slate-900 text-lg">TaskFlow</span>
+            <Link to="/" onClick={onClose} className="flex items-center">
+              <TaskFlowLogo size="sm" />
             </Link>
 
             <button

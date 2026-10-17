@@ -13,7 +13,7 @@ export function SocketProvider({ children }) {
   const socketRef = useRef(null);
 
   useEffect(() => {
-    // Sirf tab connect karein jab user logged in ho
+    // Connect only when user is authenticated
     if (!user?._id) {
       if (socketRef.current) {
         socketRef.current.disconnect();

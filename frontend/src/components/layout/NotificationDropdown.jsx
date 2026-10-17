@@ -17,7 +17,7 @@ export default function NotificationDropdown() {
 
   const { latestNotification, isConnected } = useSocket();
 
-  // Notifications fetch karein
+  // Fetch recent notifications
   const fetchNotifications = async () => {
     try {
       setLoading(true);
@@ -45,7 +45,7 @@ export default function NotificationDropdown() {
     }
   }, [latestNotification]);
 
-  // Dropdown ke bahar click karne par close karein
+  // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {

@@ -19,7 +19,7 @@ export default function ManagerApprovalsPage() {
   const [rejectReason, setRejectReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Pending employees load karo
+  // Fetch pending approval employees
   const fetchPending = async () => {
     try {
       setLoading(true);

@@ -5,7 +5,7 @@ dotenv.config();
 
 const models = require('../models');
 
-// Saare models ke indexes MongoDB mein build karne ka script
+// Synchronize MongoDB model indexes
 const syncAllIndexes = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI);

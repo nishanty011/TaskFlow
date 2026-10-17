@@ -1,7 +1,6 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-// Loading spinner — auth check hone tak dikhao
 function AuthLoader() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -13,24 +12,21 @@ function AuthLoader() {
   );
 }
 
-// Protected route — sirf logged-in users ke liye
+// Protected route for authenticated users
 export function ProtectedRoute({ roles = [] }) {
   const { isAuthenticated, loading, user } = useAuth();
   const location = useLocation();
 
   if (loading) return <AuthLoader />;
 
-  // Login nahi hai — login page pe bhejo
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Account pending approval — waiting page pe bhejo
   if (user?.status === "pending" || user?.status === "pending_approval") {
     return <Navigate to="/waiting-approval" replace />;
   }
 
-  // Role check — agar specific roles chahiye aur user ka role match nahi karta
   if (roles.length > 0 && !roles.includes(user?.role)) {
     return <Navigate to="/unauthorized" replace />;
   }
@@ -38,15 +34,13 @@ export function ProtectedRoute({ roles = [] }) {
   return <Outlet />;
 }
 
-// Guest route — sirf logged-out users ke liye (login, register pages)
+// Guest route for unauthenticated visitors (login, register)
 export function GuestRoute() {
   const { isAuthenticated, loading, user } = useAuth();
 
   if (loading) return <AuthLoader />;
 
-  // Pehle se logged in hai — dashboard pe bhejo
   if (isAuthenticated && user?.role) {
-    // Role ke hisaab se redirect
     const dashboardPaths = {
       admin: "/admin/dashboard",
       superadmin: "/admin/dashboard",
@@ -61,7 +55,7 @@ export function GuestRoute() {
   return <Outlet />;
 }
 
-// Pending route — sirf pending users ke liye
+// Route for users awaiting approval
 export function PendingRoute() {
   const { isAuthenticated, loading, user } = useAuth();
 

@@ -2,7 +2,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
-// Pending users ke liye waiting page — premium animated design
+// Waiting approval page for newly registered users
 export default function WaitingApprovalPage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();

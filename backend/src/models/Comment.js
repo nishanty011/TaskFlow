@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 
-// Attachment subschema for comments
 const commentAttachmentSchema = new mongoose.Schema(
   {
     url: {
@@ -23,30 +22,24 @@ const commentAttachmentSchema = new mongoose.Schema(
   { _id: true }
 );
 
-// Comment schema - task ke discussion thread ke liye
 const commentSchema = new mongoose.Schema(
   {
-    // Kis task ka discussion thread hai
     task: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Task',
-      required: [true, 'Task ID zaroori hai']
+      required: [true, 'Task ID is required']
     },
-    // Comment likhne wala user
     author: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: [true, 'Author zaroori hai']
+      required: [true, 'Author is required']
     },
-    // Comment text
     message: {
       type: String,
-      required: [true, 'Message text zaroori hai'],
+      required: [true, 'Message text is required'],
       trim: true
     },
-    // Optional file attachments
     attachments: [commentAttachmentSchema],
-    // Tagged users (@mentions)
     mentions: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -59,7 +52,6 @@ const commentSchema = new mongoose.Schema(
   }
 );
 
-// Indexes - task discussion thread ko time ke hisaab se order mein lane ke liye
 commentSchema.index({ task: 1, createdAt: 1 });
 commentSchema.index({ author: 1 });
 

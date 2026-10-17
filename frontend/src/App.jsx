@@ -80,7 +80,7 @@ export default function App() {
             {/* Public Home Landing Page */}
             <Route path="/" element={<HomePage />} />
 
-            {/* Guest routes — sirf logged-out users ke liye */}
+            {/* Guest routes for unauthenticated visitors */}
             <Route element={<GuestRoute />}>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />

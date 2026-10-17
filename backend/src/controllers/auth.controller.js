@@ -18,12 +18,12 @@ const {
 } = require('../services/mail.service');
 const { emitToUser } = require('../config/socket');
 
-// 6-digit OTP hash karne ka helper (SHA256)
+// Helper: hash 6-digit OTP (SHA256)
 const hashOtp = (otp) => {
   return crypto.createHash('sha256').update(otp).digest('hex');
 };
 
-// 6-digit random numeric OTP generate karne ka helper
+// Helper: generate 6-digit random numeric OTP
 const generateOtp = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };

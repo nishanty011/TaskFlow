@@ -2,42 +2,37 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const { USER_ROLES, USER_STATUS } = require('../utils/constants');
 
-// User schema - manager, employee, aur superadmin sab isi collection mein rahenge
 const userSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, 'User ka naam zaroori hai'],
+      required: [true, 'Name is required'],
       trim: true
     },
     email: {
       type: String,
-      required: [true, 'Email zaroori hai'],
+      required: [true, 'Email is required'],
       unique: true,
       lowercase: true,
       trim: true,
-      match: [/^\S+@\S+\.\S+$/, 'Valid email address enter karein']
+      match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email address']
     },
-    // Password hash hoga aur queries mein default select nahi hoga
     password: {
       type: String,
-      required: [true, 'Password zaroori hai'],
-      minlength: [6, 'Password kam se kam 6 characters ka hona chahiye'],
+      required: [true, 'Password is required'],
+      minlength: [6, 'Password must be at least 6 characters long'],
       select: false
     },
-    // User ka role: manager, employee ya superadmin
     role: {
       type: String,
       enum: Object.values(USER_ROLES),
       default: USER_ROLES.EMPLOYEE
     },
-    // Kis department se belong karta hai
     department: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Department',
       default: null
     },
-    // Account approval status
     status: {
       type: String,
       enum: Object.values(USER_STATUS),
@@ -47,7 +42,6 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true
     },
-    // Kis manager ne approve kiya
     approvedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -83,7 +77,6 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null
     },
-    // Email OTP verification ke fields
     otpHash: {
       type: String,
       select: false,
@@ -100,7 +93,7 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Password save karne se pehle bcrypt se hash karein (Mongoose 9 async syntax)
+// Hash password before saving
 userSchema.pre('save', async function () {
   if (!this.isModified('password')) {
     return;
@@ -109,13 +102,10 @@ userSchema.pre('save', async function () {
   this.password = await bcrypt.hash(this.password, salt);
 });
 
-// Password match karne ka method
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// Indexes - fast queries aur data isolation ke liye
-// Email unique index already schema definition mein hai
 userSchema.index({ department: 1, status: 1 });
 userSchema.index({ role: 1 });
 

@@ -6,7 +6,7 @@ import AuthLayout from "../../layouts/AuthLayout";
 import { loginUser } from "../../api/auth.api";
 import { useAuth } from "../../context/AuthContext";
 
-// Role ke hisaab se dashboard path
+// Dashboard route mapping by role
 const DASHBOARD_PATHS = {
   admin: "/admin/dashboard",
   superadmin: "/admin/dashboard",
@@ -43,20 +43,19 @@ export default function LoginPage() {
 
       toast.success(`Welcome back, ${user.name.split(" ")[0]}! 👋`);
 
-      // Pending users ko waiting page pe bhejo
+      // Redirect pending users to waiting page
       if (user.status === "pending") {
         navigate("/waiting-approval", { replace: true });
         return;
       }
 
-      // Pehle jahan tha wahan le jao, warna dashboard
+      // Redirect to previous path or default dashboard
       const from = location.state?.from?.pathname || DASHBOARD_PATHS[user.role] || "/";
       navigate(from, { replace: true });
     } catch (err) {
       const msg = err.response?.data?.message || "Login failed. Please try again.";
       toast.error(msg);
 
-      // Credentials galat hone pe field error dikhao
       if (err.response?.status === 401) {
         setError("password", { message: "Invalid email or password" });
       }

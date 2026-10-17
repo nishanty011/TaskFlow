@@ -3,8 +3,7 @@ const ApiError = require('../utils/ApiError');
 const ApiResponse = require('../utils/ApiResponse');
 const { Notification } = require('../models');
 
-// 1. GET /api/notifications
-// Logged in user ke saare notifications (paginated + unread count)
+// GET /api/notifications - User notifications with pagination and unread count
 const getMyNotifications = asyncHandler(async (req, res) => {
   const { isRead, page = 1, limit = 20 } = req.query;
 
@@ -21,7 +20,6 @@ const getMyNotifications = asyncHandler(async (req, res) => {
     .skip(skip)
     .limit(parseInt(limit));
 
-  // Navbar badge ke liye total unread count
   const unreadCount = await Notification.countDocuments({
     user: req.user._id,
     isRead: false
@@ -38,8 +36,7 @@ const getMyNotifications = asyncHandler(async (req, res) => {
   );
 });
 
-// 2. PATCH /api/notifications/:id/read
-// Mark single notification as read
+// PATCH /api/notifications/:id/read - Mark single notification as read
 const markAsRead = asyncHandler(async (req, res) => {
   const notification = await Notification.findOne({
     _id: req.params.id,
@@ -66,8 +63,7 @@ const markAsRead = asyncHandler(async (req, res) => {
   );
 });
 
-// 3. PATCH /api/notifications/read-all
-// Mark all notifications as read
+// PATCH /api/notifications/read-all - Mark all notifications as read
 const markAllAsRead = asyncHandler(async (req, res) => {
   await Notification.updateMany(
     { user: req.user._id, isRead: false },
@@ -79,8 +75,7 @@ const markAllAsRead = asyncHandler(async (req, res) => {
   );
 });
 
-// 4. DELETE /api/notifications/:id
-// Delete a single notification
+// DELETE /api/notifications/:id - Delete a single notification
 const deleteNotification = asyncHandler(async (req, res) => {
   const notification = await Notification.findOneAndDelete({
     _id: req.params.id,
@@ -96,8 +91,7 @@ const deleteNotification = asyncHandler(async (req, res) => {
   );
 });
 
-// 5. DELETE /api/notifications/clear-all
-// Clear all read notifications
+// DELETE /api/notifications/clear-all - Clear all read notifications
 const clearReadNotifications = asyncHandler(async (req, res) => {
   const result = await Notification.deleteMany({
     user: req.user._id,
