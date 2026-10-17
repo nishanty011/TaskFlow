@@ -7,6 +7,7 @@ import { PRIORITY_CONFIG } from "../../utils/statusColors";
 import { CardSkeleton } from "../../components/ui/Skeleton";
 import EmptyState from "../../components/ui/EmptyState";
 import Modal from "../../components/ui/Modal";
+import { getFileUrl } from "../../utils/fileUrl";
 
 export default function ManagerReviewsPage() {
   const [submissions, setSubmissions] = useState([]);
@@ -220,7 +221,7 @@ export default function ManagerReviewsPage() {
                         {sub.files.map((file, idx) => (
                           <a
                             key={idx}
-                            href={file.url}
+                            href={getFileUrl(file.url)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-brand-50 text-slate-700 hover:text-brand-600 text-xs font-semibold border border-slate-200 transition-colors"
@@ -319,7 +320,7 @@ export default function ManagerReviewsPage() {
                   {selectedSub.files.map((f, idx) => (
                     <a
                       key={idx}
-                      href={f.url}
+                      href={getFileUrl(f.url)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-3 bg-slate-50 hover:bg-brand-50 border border-slate-200 rounded-xl text-xs flex items-center justify-between transition-colors group"

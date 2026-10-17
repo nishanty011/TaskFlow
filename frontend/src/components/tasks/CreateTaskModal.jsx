@@ -4,10 +4,10 @@ import Modal from "../ui/Modal";
 import { createTask } from "../../api/task.api";
 import { getEmployees } from "../../api/user.api";
 
-export default function CreateTaskModal({ isOpen, onClose, onTaskCreated }) {
+export default function CreateTaskModal({ isOpen, onClose, onTaskCreated, defaultAssigneeId }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [assignedTo, setAssignedTo] = useState("");
+  const [assignedTo, setAssignedTo] = useState(defaultAssigneeId || "");
   const [priority, setPriority] = useState("medium");
   const [dueDate, setDueDate] = useState("");
   const [estimatedHours, setEstimatedHours] = useState("");
@@ -28,13 +28,16 @@ export default function CreateTaskModal({ isOpen, onClose, onTaskCreated }) {
   // Load department employees for assignee dropdown
   useEffect(() => {
     if (isOpen) {
+      if (defaultAssigneeId) {
+        setAssignedTo(defaultAssigneeId);
+      }
       const fetchDepts = async () => {
         try {
           setLoadingEmployees(true);
           const res = await getEmployees();
           const list = res.data?.data?.employees || [];
           setEmployees(list);
-          if (list.length > 0 && !assignedTo) {
+          if (list.length > 0 && !defaultAssigneeId && !assignedTo) {
             setAssignedTo(list[0]._id);
           }
         } catch (err) {
@@ -46,7 +49,7 @@ export default function CreateTaskModal({ isOpen, onClose, onTaskCreated }) {
       };
       fetchDepts();
     }
-  }, [isOpen]);
+  }, [isOpen, defaultAssigneeId]);
 
   // Tags handlers
   const handleAddTag = (e) => {
@@ -142,8 +145,13 @@ export default function CreateTaskModal({ isOpen, onClose, onTaskCreated }) {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Assign New Department Task">
-      <form onSubmit={handleSubmit} className="space-y-4 max-h-[75vh] overflow-y-auto pr-1">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Assign New Department Task"
+      maxWidth="max-w-2xl"
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
         {/* Title */}
         <div>
           <label className="block text-xs font-bold text-slate-700 mb-1">

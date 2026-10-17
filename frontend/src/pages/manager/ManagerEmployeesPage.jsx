@@ -6,6 +6,7 @@ import { getManagerDashboard } from "../../api/dashboard.api";
 import { formatDate, timeAgo } from "../../utils/formatDate";
 import { CardSkeleton } from "../../components/ui/Skeleton";
 import EmptyState from "../../components/ui/EmptyState";
+import CreateTaskModal from "../../components/tasks/CreateTaskModal";
 
 export default function ManagerEmployeesPage() {
   const [employees, setEmployees] = useState([]);
@@ -19,6 +20,7 @@ export default function ManagerEmployeesPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [fullEmpData, setFullEmpData] = useState(null);
+  const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -523,9 +525,7 @@ export default function ManagerEmployeesPage() {
                   Close Profile
                 </button>
                 <button
-                  onClick={() => {
-                    toast(`Assigning task shortcut for ${fullEmpData?.name} will open in Phase C7!`, { icon: "📋" });
-                  }}
+                  onClick={() => setIsCreateTaskOpen(true)}
                   className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 text-white font-semibold text-xs shadow-md hover:shadow-lg transition-all flex-1"
                 >
                   + Assign Task
@@ -535,6 +535,18 @@ export default function ManagerEmployeesPage() {
           </div>
         </div>
       )}
+
+      {/* Task Creation Modal with Preselected Employee */}
+      <CreateTaskModal
+        isOpen={isCreateTaskOpen}
+        onClose={() => setIsCreateTaskOpen(false)}
+        defaultAssigneeId={fullEmpData?._id}
+        onTaskCreated={() => {
+          toast.success(`Task created for ${fullEmpData?.name || "employee"}! 🎯`);
+          handleCloseDrawer();
+          fetchData();
+        }}
+      />
     </div>
   );
 }

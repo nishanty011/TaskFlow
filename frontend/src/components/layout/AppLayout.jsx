@@ -28,7 +28,7 @@ export default function AppLayout() {
         <Navbar onMobileMenuClick={() => setIsMobileDrawerOpen(true)} />
 
         {/* Nested Page Routes Render Here */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto animate-fade-up">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
           <Outlet />
         </main>
       </div>

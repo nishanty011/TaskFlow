@@ -364,7 +364,8 @@ const reviewTask = asyncHandler(async (req, res) => {
 // 8. POST /api/tasks/:id/comments
 // Task par comment add karo (manager ya employee dono kar sakte hain)
 const addComment = asyncHandler(async (req, res) => {
-  const { message, mentions = [] } = req.body;
+  const message = (req.body.message || req.body.content || '').trim();
+  const { mentions = [] } = req.body;
 
   const task = await Task.findById(req.params.id);
   if (!task) throw new ApiError(404, 'Task nahi mila');

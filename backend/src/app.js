@@ -8,8 +8,10 @@ const ApiError = require('./utils/ApiError');
 
 const app = express();
 
-// Security headers - basic security ke liye
-app.use(helmet());
+// Security headers - basic security ke liye (allow cross-origin for static uploads)
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
+}));
 
 // CORS - frontend se requests allow karne ke liye
 app.use(cors({

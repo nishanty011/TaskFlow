@@ -203,12 +203,6 @@ export default function HomePage() {
             >
               How It Works
             </a>
-            <Link
-              to="/style-guide"
-              className="text-sm font-medium text-slate-600 hover:text-brand-600 transition-colors"
-            >
-              Components UI
-            </Link>
           </div>
 
           {/* Action CTAs */}
@@ -1146,9 +1140,6 @@ export default function HomePage() {
             </Link>
             <Link to="/register" className="hover:text-brand-600 transition-colors">
               Register
-            </Link>
-            <Link to="/style-guide" className="hover:text-brand-600 transition-colors">
-              UI System
             </Link>
           </div>
         </div>

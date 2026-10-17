@@ -16,8 +16,10 @@ import { useAuth } from "../../context/AuthContext";
 import { getManagerDashboard } from "../../api/dashboard.api";
 import { getPendingEmployees } from "../../api/user.api";
 import { CardSkeleton } from "../../components/ui/Skeleton";
-import { TASK_STATUS_COLORS, PRIORITY_COLORS } from "../../utils/statusColors";
 import { formatDate, timeAgo } from "../../utils/formatDate";
+import { PRIORITY_COLORS, PRIORITY_CONFIG } from "../../utils/statusColors";
+import CreateTaskModal from "../../components/tasks/CreateTaskModal";
+import ReviewSubmissionModal from "../../components/tasks/ReviewSubmissionModal";
 
 // Smooth animated counter hook
 function useAnimatedNumber(target, duration = 800) {
@@ -98,6 +100,9 @@ export default function ManagerDashboardPage() {
   const [data, setData] = useState(null);
   const [pendingCount, setPendingCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [selectedSubForReview, setSelectedSubForReview] = useState(null);
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
 
   const fetchDashboard = async () => {
     try {
@@ -216,7 +221,7 @@ export default function ManagerDashboardPage() {
             </Link>
 
             <button
-              onClick={() => toast("Task creation modal will open in Phase C7", { icon: "📋" })}
+              onClick={() => setIsCreateOpen(true)}
               className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-brand-600 via-indigo-600 to-violet-600 hover:from-brand-500 hover:to-indigo-500 text-white font-semibold text-xs shadow-md shadow-brand-500/20 hover:shadow-lg transition-all flex items-center gap-1.5 active:scale-95"
             >
               <span>+ Create Task</span>
@@ -460,7 +465,10 @@ export default function ManagerDashboardPage() {
                       v{sub.version || 1}
                     </span>
                     <button
-                      onClick={() => toast("Deliverable review modal will open in Phase C7", { icon: "📝" })}
+                      onClick={() => {
+                        setSelectedSubForReview(sub);
+                        setIsReviewOpen(true);
+                      }}
                       className="px-3 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs shadow-sm transition-all"
                     >
                       Review
@@ -590,6 +598,32 @@ export default function ManagerDashboardPage() {
           <p className="text-xs text-slate-400 text-center py-4">No recent activity recorded yet.</p>
         )}
       </div>
+
+      {/* Create Task Modal */}
+      {isCreateOpen && (
+        <CreateTaskModal
+          isOpen={isCreateOpen}
+          onClose={() => setIsCreateOpen(false)}
+          onTaskCreated={() => {
+            fetchDashboard();
+          }}
+        />
+      )}
+
+      {/* Review Deliverable Modal */}
+      {isReviewOpen && selectedSubForReview && (
+        <ReviewSubmissionModal
+          isOpen={isReviewOpen}
+          submission={selectedSubForReview}
+          onClose={() => {
+            setIsReviewOpen(false);
+            setSelectedSubForReview(null);
+          }}
+          onReviewed={() => {
+            fetchDashboard();
+          }}
+        />
+      )}
     </div>
   );
 }

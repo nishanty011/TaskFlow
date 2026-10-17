@@ -60,8 +60,13 @@ export default function SubmitDeliverableModal({ isOpen, onClose, task, onSubmit
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={`Submit Deliverable — ${task.title}`}>
-      <form onSubmit={handleSubmit} className="space-y-4 max-h-[75vh] overflow-y-auto pr-1">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={`Submit Deliverable — ${task.title}`}
+      maxWidth="max-w-xl"
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
         {/* Task Summary Banner */}
         <div className="p-3.5 rounded-2xl bg-indigo-50/70 border border-brand-200/60 flex items-center justify-between text-xs">
           <div>
@@ -82,7 +87,7 @@ export default function SubmitDeliverableModal({ isOpen, onClose, task, onSubmit
           </label>
           <textarea
             required
-            rows={4}
+            rows={3}
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Summarize completed items, key outcomes, deployment links, or notes for your manager..."

@@ -28,7 +28,10 @@ export const reviewTask = (id, data) => api.patch(`/tasks/${id}/review`, data);
 export const getTaskTimeline = (id) => api.get(`/tasks/${id}/timeline`);
 
 // Add comment
-export const addTaskComment = (id, data) => api.post(`/tasks/${id}/comments`, data);
+export const addTaskComment = (id, data) => {
+  const payload = typeof data === "string" ? { message: data } : { message: data.message || data.content, ...data };
+  return api.post(`/tasks/${id}/comments`, payload);
+};
 
 // Stats
 export const getTaskStats = () => api.get("/tasks/stats");

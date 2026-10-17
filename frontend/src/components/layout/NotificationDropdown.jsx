@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
+import { useSocket } from "../../context/SocketContext";
 import {
   getMyNotifications,
   markNotificationAsRead,
@@ -14,14 +15,17 @@ export default function NotificationDropdown() {
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef(null);
 
+  const { latestNotification, isConnected } = useSocket();
+
   // Notifications fetch karein
   const fetchNotifications = async () => {
     try {
       setLoading(true);
       const { data } = await getMyNotifications({ limit: 8 });
       const notifs = data.data?.notifications || [];
+      const serverUnread = data.data?.unreadCount ?? notifs.filter((n) => !n.isRead).length;
       setNotifications(notifs);
-      setUnreadCount(notifs.filter((n) => !n.isRead).length);
+      setUnreadCount(serverUnread);
     } catch {
       // silent fallback
     } finally {
@@ -32,6 +36,14 @@ export default function NotificationDropdown() {
   useEffect(() => {
     fetchNotifications();
   }, []);
+
+  // Real-time live notification append
+  useEffect(() => {
+    if (latestNotification) {
+      setNotifications((prev) => [latestNotification, ...prev]);
+      setUnreadCount((c) => c + 1);
+    }
+  }, [latestNotification]);
 
   // Dropdown ke bahar click karne par close karein
   useEffect(() => {

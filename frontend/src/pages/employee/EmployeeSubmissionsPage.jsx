@@ -6,6 +6,7 @@ import SubmitDeliverableModal from "../../components/tasks/SubmitDeliverableModa
 import { formatDate, timeAgo } from "../../utils/formatDate";
 import { CardSkeleton } from "../../components/ui/Skeleton";
 import EmptyState from "../../components/ui/EmptyState";
+import { getFileUrl } from "../../utils/fileUrl";
 
 // Helper for file sizes
 function formatFileSize(bytes) {
@@ -287,39 +288,44 @@ export default function EmployeeSubmissionsPage() {
                 </div>
 
                 {/* Attachments Section */}
-                {sub.attachments && sub.attachments.length > 0 && (
-                  <div>
-                    <span className="font-bold text-slate-500 text-[11px] uppercase tracking-wider block mb-2">
-                      Deliverable Files ({sub.attachments.length})
-                    </span>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-                      {sub.attachments.map((file, idx) => (
-                        <a
-                          key={idx}
-                          href={`http://localhost:5000${file.url}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-white border border-slate-200/80 hover:border-brand-500 hover:shadow-sm transition-all group"
-                        >
-                          <span className="text-xl group-hover:scale-110 transition-transform">
-                            {getFileIcon(file.mimeType, file.originalName)}
-                          </span>
-                          <div className="flex-1 min-w-0">
-                            <span className="text-xs font-bold text-slate-800 block truncate group-hover:text-brand-600 transition-colors">
-                              {file.originalName}
+                {(() => {
+                  const filesList = (sub.files && sub.files.length > 0) ? sub.files : (sub.attachments || []);
+                  if (filesList.length === 0) return null;
+
+                  return (
+                    <div>
+                      <span className="font-bold text-slate-500 text-[11px] uppercase tracking-wider block mb-2">
+                        Deliverable Files ({filesList.length})
+                      </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                        {filesList.map((file, idx) => (
+                          <a
+                            key={idx}
+                            href={getFileUrl(file.url)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-white border border-slate-200/80 hover:border-brand-500 hover:shadow-sm transition-all group"
+                          >
+                            <span className="text-xl group-hover:scale-110 transition-transform">
+                              {getFileIcon(file.mime || file.mimeType, file.name || file.originalName)}
                             </span>
-                            <span className="text-[10px] text-slate-400 font-medium">
-                              {formatFileSize(file.size)}
+                            <div className="flex-1 min-w-0">
+                              <span className="text-xs font-bold text-slate-800 block truncate group-hover:text-brand-600 transition-colors">
+                                {file.name || file.originalName}
+                              </span>
+                              <span className="text-[10px] text-slate-400 font-medium">
+                                {formatFileSize(file.size)}
+                              </span>
+                            </div>
+                            <span className="text-xs text-slate-400 group-hover:text-brand-600">
+                              ⬇
                             </span>
-                          </div>
-                          <span className="text-xs text-slate-400 group-hover:text-brand-600">
-                            ⬇
-                          </span>
-                        </a>
-                      ))}
+                          </a>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {/* Manager Evaluation Card (if reviewed) */}
                 {(sub.reviewComment || sub.rating) && (

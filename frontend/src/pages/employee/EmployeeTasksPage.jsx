@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { getTasks, updateChecklist, updateTaskStatus, addTaskComment } from "../../api/task.api";
+import { getTasks, getTaskById, updateChecklist, updateTaskStatus, addTaskComment } from "../../api/task.api";
 import SubmitDeliverableModal from "../../components/tasks/SubmitDeliverableModal";
+import TaskTimeline from "../../components/tasks/TaskTimeline";
 import { formatDate, timeAgo } from "../../utils/formatDate";
 import { TASK_STATUS_CONFIG, PRIORITY_CONFIG } from "../../utils/statusColors";
 import { CardSkeleton } from "../../components/ui/Skeleton";
@@ -23,6 +24,7 @@ export default function EmployeeTasksPage() {
   const [selectedTask, setSelectedTask] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [commentText, setCommentText] = useState("");
+  const [taskComments, setTaskComments] = useState([]);
   const [submittingComment, setSubmittingComment] = useState(false);
 
   // Updating checklist state map
@@ -124,18 +126,36 @@ export default function EmployeeTasksPage() {
     }
   };
 
+  // Open Drawer and load comments
+  const handleOpenDrawer = async (task) => {
+    setSelectedTask(task);
+    setIsDrawerOpen(true);
+    setTaskComments([]);
+    try {
+      const res = await getTaskById(task._id);
+      if (res.data?.data?.comments) {
+        setTaskComments(res.data.data.comments);
+      }
+    } catch {
+      // ignore
+    }
+  };
+
   // Add Comment inside Drawer
   const handleAddComment = async (e) => {
     e.preventDefault();
     if (!commentText.trim() || !selectedTask) return;
     setSubmittingComment(true);
     try {
-      await addTaskComment(selectedTask._id, { content: commentText.trim() });
-      toast.success("Comment added");
+      const res = await addTaskComment(selectedTask._id, { message: commentText.trim() });
+      toast.success("Comment added! 💬");
+      const newComment = res.data?.data?.comment;
+      if (newComment) {
+        setTaskComments((prev) => [...prev, newComment]);
+      }
       setCommentText("");
-      fetchTasks();
     } catch (err) {
-      toast.error("Comment add nahi ho saka");
+      toast.error(err.response?.data?.message || "Comment add nahi ho saka");
     } finally {
       setSubmittingComment(false);
     }
@@ -354,10 +374,7 @@ export default function EmployeeTasksPage() {
 
                   {/* Title & Description */}
                   <h3
-                    onClick={() => {
-                      setSelectedTask(task);
-                      setIsDrawerOpen(true);
-                    }}
+                    onClick={() => handleOpenDrawer(task)}
                     className="font-extrabold text-slate-900 text-base leading-snug group-hover:text-brand-600 transition-colors cursor-pointer"
                   >
                     {task.title}
@@ -472,10 +489,7 @@ export default function EmployeeTasksPage() {
 
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => {
-                        setSelectedTask(task);
-                        setIsDrawerOpen(true);
-                      }}
+                      onClick={() => handleOpenDrawer(task)}
                       className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all"
                     >
                       Details
@@ -588,6 +602,12 @@ export default function EmployeeTasksPage() {
                 </div>
               </div>
 
+              {/* Task Progress Stepper & Lifecycle History */}
+              <TaskTimeline
+                taskId={selectedTask._id}
+                currentStatus={selectedTask.status}
+              />
+
               {/* Description */}
               <div>
                 <h4 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
@@ -638,8 +658,26 @@ export default function EmployeeTasksPage() {
               {/* Task Comments / Discussion */}
               <div>
                 <h4 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-2">
-                  Task Discussion & Questions
+                  Task Discussion & Questions ({taskComments.length})
                 </h4>
+
+                {/* Comments List */}
+                {taskComments.length > 0 ? (
+                  <div className="space-y-2 mb-3 max-h-48 overflow-y-auto pr-1">
+                    {taskComments.map((c) => (
+                      <div key={c._id} className="p-3 bg-slate-50 rounded-2xl border border-slate-100 text-xs">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-bold text-slate-800">{c.author?.name || "Team Member"}</span>
+                          <span className="text-[10px] text-slate-400">{timeAgo(c.createdAt)}</span>
+                        </div>
+                        <p className="text-slate-600 font-medium whitespace-pre-wrap">{c.message}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400 italic mb-3">No discussion comments yet. Be the first to post!</p>
+                )}
+
                 <form onSubmit={handleAddComment} className="space-y-2">
                   <textarea
                     rows={2}

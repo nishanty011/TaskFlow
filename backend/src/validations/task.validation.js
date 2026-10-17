@@ -63,8 +63,11 @@ const updateChecklistSchema = z.object({
 // Comment add karne ki validation
 const addCommentSchema = z.object({
   body: z.object({
-    message: z.string({ required_error: 'Comment message zaroori hai' }).min(1, 'Comment empty nahi ho sakta').trim(),
+    message: z.string().min(1, 'Comment empty nahi ho sakta').trim().optional(),
+    content: z.string().min(1, 'Comment empty nahi ho sakta').trim().optional(),
     mentions: z.array(z.string()).optional().default([])
+  }).refine((data) => Boolean(data.message || data.content), {
+    message: 'Comment message zaroori hai'
   })
 });
 

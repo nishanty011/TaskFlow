@@ -148,7 +148,7 @@ function ActivityItem({ activity }) {
           {" "}
           {activity.action?.replace(/_/g, " ")}
           {activity.department && (
-            <span className="text-brand-600 font-semibold"> • {activity.department.name}</span>
+            <span className="text-brand-600 font-semibold"> • {typeof activity.department === "object" ? activity.department.name || activity.department.code || "" : activity.department}</span>
           )}
         </p>
         <p className="text-[10px] text-slate-400 mt-0.5">{timeAgo(activity.createdAt)}</p>

@@ -3,7 +3,10 @@ import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { getTasks, archiveTask, addTaskComment } from "../../api/task.api";
 import { getEmployees } from "../../api/user.api";
+import { getTaskSubmissions } from "../../api/submission.api";
 import CreateTaskModal from "../../components/tasks/CreateTaskModal";
+import ReviewSubmissionModal from "../../components/tasks/ReviewSubmissionModal";
+import TaskTimeline from "../../components/tasks/TaskTimeline";
 import { formatDate, timeAgo } from "../../utils/formatDate";
 import { TASK_STATUS_CONFIG, PRIORITY_CONFIG } from "../../utils/statusColors";
 import { CardSkeleton } from "../../components/ui/Skeleton";
@@ -32,6 +35,32 @@ export default function ManagerTasksPage() {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
+
+  // Review modal state
+  const [reviewSub, setReviewSub] = useState(null);
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
+  const [loadingReview, setLoadingReview] = useState(false);
+
+  const handleOpenTaskReview = async (task) => {
+    try {
+      setLoadingReview(true);
+      const res = await getTaskSubmissions(task._id);
+      const subs = res.data?.data?.submissions || [];
+      if (subs.length === 0) {
+        toast("No deliverables uploaded yet for this task", { icon: "ℹ️" });
+        return;
+      }
+      // Populate task onto submission for modal display
+      const latest = { ...subs[0], task: task };
+      setReviewSub(latest);
+      setIsReviewOpen(true);
+    } catch (err) {
+      console.error("Failed to load submission for review:", err);
+      toast.error("Submissions load nahi ho paye");
+    } finally {
+      setLoadingReview(false);
+    }
+  };
 
   // Employees for filtering
   const [employees, setEmployees] = useState([]);
@@ -76,8 +105,8 @@ export default function ManagerTasksPage() {
     if (!commentText.trim() || !selectedTask) return;
     setSubmittingComment(true);
     try {
-      await addTaskComment(selectedTask._id, { content: commentText.trim() });
-      toast.success("Comment added");
+      await addTaskComment(selectedTask._id, { message: commentText.trim() });
+      toast.success("Comment added! 💬");
       setCommentText("");
       // Refresh task
       fetchTasksData();
@@ -508,6 +537,33 @@ export default function ManagerTasksPage() {
                     </div>
                   </div>
 
+                  {/* Review Deliverable Banner if Under Review */}
+                  {(selectedTask.status === "under_review" || selectedTask.status === "submitted") && (
+                    <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/80 rounded-2xl flex items-center justify-between gap-3 shadow-sm">
+                      <div>
+                        <div className="text-xs font-extrabold text-amber-900 flex items-center gap-1.5">
+                          <span>📝</span> Deliverable Ready for Review
+                        </div>
+                        <div className="text-[11px] text-amber-700 mt-0.5">
+                          Employee has submitted deliverables awaiting your verification.
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleOpenTaskReview(selectedTask)}
+                        disabled={loadingReview}
+                        className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs shadow-md shadow-amber-500/20 transition-all flex items-center gap-1.5 flex-shrink-0"
+                      >
+                        {loadingReview ? "Loading..." : "Review Deliverable"}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Task Progress Stepper & Lifecycle Track */}
+                  <TaskTimeline
+                    taskId={selectedTask._id}
+                    currentStatus={selectedTask.status}
+                  />
+
                   {/* Weighted Checklist */}
                   {selectedTask.checklist && selectedTask.checklist.length > 0 && (
                     <div className="space-y-3">
@@ -593,6 +649,22 @@ export default function ManagerTasksPage() {
         onClose={() => setIsCreateOpen(false)}
         onTaskCreated={fetchTasksData}
       />
+
+      {/* Review Deliverable Modal */}
+      {isReviewOpen && reviewSub && (
+        <ReviewSubmissionModal
+          isOpen={isReviewOpen}
+          submission={reviewSub}
+          onClose={() => {
+            setIsReviewOpen(false);
+            setReviewSub(null);
+          }}
+          onReviewed={() => {
+            setIsDetailOpen(false);
+            fetchTasksData();
+          }}
+        />
+      )}
     </div>
   );
 }

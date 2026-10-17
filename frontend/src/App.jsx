@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "./context/AuthContext";
+import { SocketProvider } from "./context/SocketContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import { GuestRoute, ProtectedRoute, PendingRoute } from "./routes/ProtectedRoute";
 
 // Layout components
@@ -20,6 +22,9 @@ import HomePage from "./pages/home/HomePage";
 import UnauthorizedPage from "./pages/shared/UnauthorizedPage";
 import StyleGuidePage from "./pages/shared/StyleGuidePage";
 import NotFoundPage from "./pages/shared/NotFoundPage";
+import ProfilePage from "./pages/shared/ProfilePage";
+import SettingsPage from "./pages/shared/SettingsPage";
+import NotificationsPage from "./pages/shared/NotificationsPage";
 
 // Role Dashboard Views
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
@@ -40,9 +45,11 @@ import EmployeeTeamPage from "./pages/employee/EmployeeTeamPage";
 export default function App() {
   return (
     <ErrorBoundary>
-      <BrowserRouter>
-        <AuthProvider>
-          {/* Toast notifications — styled with rounded-2xl & smooth elevation */}
+      <ThemeProvider>
+        <BrowserRouter>
+          <AuthProvider>
+          <SocketProvider>
+            {/* Toast notifications — styled with rounded-2xl & smooth elevation */}
           <Toaster
             position="top-right"
             gutter={8}
@@ -118,6 +125,15 @@ export default function App() {
               </Route>
             </Route>
 
+            {/* Shared authenticated routes across all roles */}
+            <Route element={<ProtectedRoute />}>
+              <Route element={<AppLayout />}>
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/notifications" element={<NotificationsPage />} />
+              </Route>
+            </Route>
+
             {/* Shared protected & dev routes */}
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
             <Route path="/style-guide" element={<StyleGuidePage />} />
@@ -125,8 +141,10 @@ export default function App() {
             {/* 404 Not Found Page */}
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
+          </SocketProvider>
         </AuthProvider>
       </BrowserRouter>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }

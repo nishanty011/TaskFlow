@@ -45,6 +45,26 @@ const timeAgo = (date) => {
   return `${Math.floor(days / 7)}w ago`;
 };
 
+// Safe rendering helpers to prevent object as React child errors
+const getDepartmentLabel = (dept) => {
+  if (!dept) return "";
+  if (typeof dept === "string") return dept;
+  if (typeof dept === "object") return dept.name || dept.code || "";
+  return String(dept);
+};
+
+const getActorName = (actor) => {
+  if (!actor) return "System";
+  if (typeof actor === "string") return actor;
+  if (typeof actor === "object") return actor.name || actor.email || "System";
+  return String(actor);
+};
+
+const getActorRole = (actor) => {
+  if (!actor || typeof actor !== "object") return "system";
+  return actor.role || "system";
+};
+
 export default function AuditLogsPage() {
   const [activities, setActivities] = useState([]);
   const [stats, setStats] = useState(null);
@@ -63,7 +83,12 @@ export default function AuditLogsPage() {
         stats ? Promise.resolve({ data: { data: stats } }) : getActivityStats(),
       ]);
 
-      const logs = logsRes.data.data?.activities || logsRes.data.data || [];
+      const logs = Array.isArray(logsRes.data?.data?.activities)
+        ? logsRes.data.data.activities
+        : Array.isArray(logsRes.data?.data)
+        ? logsRes.data.data
+        : [];
+
       if (reset) {
         setActivities(logs);
         setPage(1);
@@ -73,9 +98,11 @@ export default function AuditLogsPage() {
       setHasMore(logs.length === limit);
 
       if (!stats) {
-        setStats(statsRes.data.data);
+        const rawStats = statsRes.data?.data?.stats || statsRes.data?.data?.actionCounts || statsRes.data?.data || {};
+        setStats(rawStats);
       }
     } catch (err) {
+      console.error("Failed to load audit logs:", err);
       toast.error("Audit logs load nahi hue");
     } finally {
       setLoading(false);
@@ -166,20 +193,25 @@ export default function AuditLogsPage() {
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {Object.entries(stats.actionCounts || stats || {}).slice(0, 4).map(([action, count], idx) => {
-            const config = getConfig(action);
-            return (
-              <div key={idx} className="bg-white/90 backdrop-blur-xl rounded-2xl border border-white/80 p-4 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-xl">{config.icon}</span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${config.bg}`}>
-                    {config.label}
-                  </span>
+          {Object.entries(
+            stats.stats || stats.actionCounts || (typeof stats === "object" ? stats : {})
+          )
+            .filter(([action, count]) => action !== "stats" && typeof count !== "object")
+            .slice(0, 4)
+            .map(([action, count], idx) => {
+              const config = getConfig(action);
+              return (
+                <div key={idx} className="bg-white/90 backdrop-blur-xl rounded-2xl border border-white/80 p-4 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xl">{config.icon}</span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${config.bg}`}>
+                      {config.label}
+                    </span>
+                  </div>
+                  <p className="text-2xl font-black text-slate-900 mt-2">{String(count)}</p>
                 </div>
-                <p className="text-2xl font-black text-slate-900 mt-2">{count}</p>
-              </div>
-            );
-          })}
+              );
+            })}
         </div>
       )}
 
@@ -202,6 +234,10 @@ export default function AuditLogsPage() {
               <div className="space-y-2">
                 {acts.map((act, idx) => {
                   const config = getConfig(act.action);
+                  const deptLabel = getDepartmentLabel(act.department);
+                  const actorName = getActorName(act.actor);
+                  const actorRole = getActorRole(act.actor);
+
                   return (
                     <div
                       key={act._id || idx}
@@ -216,30 +252,30 @@ export default function AuditLogsPage() {
                               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${config.bg} shrink-0`}>
                                 {config.icon} {config.label}
                               </span>
-                              {act.department && (
+                              {deptLabel && (
                                 <span className="text-[10px] font-medium text-brand-600 bg-brand-50 px-2 py-0.5 rounded-full shrink-0">
-                                  {act.department.name || act.department}
+                                  {deptLabel}
                                 </span>
                               )}
                             </div>
                             <span className="text-[10px] text-slate-400 font-medium shrink-0">{timeAgo(act.createdAt)}</span>
                           </div>
                           <p className="text-xs text-slate-700 mt-1.5 leading-relaxed">
-                            <span className="font-bold text-slate-900">{act.actor?.name || "System"}</span>
+                            <span className="font-bold text-slate-900">{actorName}</span>
                             {" "}
-                            <span className="text-slate-500">({act.actor?.role || "system"})</span>
+                            <span className="text-slate-500">({actorRole})</span>
                             {" performed "}
-                            <span className="font-semibold">{act.action?.replace(/_/g, " ")}</span>
+                            <span className="font-semibold">{String(act.action || "").replace(/_/g, " ")}</span>
                             {act.entityType && (
-                              <span className="text-slate-400"> on {act.entityType}</span>
+                              <span className="text-slate-400"> on {typeof act.entityType === "object" ? "item" : String(act.entityType)}</span>
                             )}
                           </p>
                           {/* Meta info */}
-                          {act.meta && Object.keys(act.meta).length > 0 && (
+                          {act.meta && typeof act.meta === "object" && Object.keys(act.meta).length > 0 && (
                             <div className="mt-2 flex flex-wrap gap-1.5">
                               {Object.entries(act.meta).slice(0, 3).map(([key, val]) => (
                                 <span key={key} className="text-[10px] bg-slate-50 text-slate-500 px-2 py-0.5 rounded-lg font-medium">
-                                  {key}: {String(val).substring(0, 40)}
+                                  {key}: {typeof val === "object" ? JSON.stringify(val) : String(val).substring(0, 40)}
                                 </span>
                               ))}
                             </div>
@@ -303,19 +339,19 @@ export default function AuditLogsPage() {
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-2">
                           <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-brand-500 to-violet-600 flex items-center justify-center text-white text-[10px] font-bold">
-                            {act.actor?.name?.charAt(0) || "S"}
+                            {getActorName(act.actor).charAt(0) || "S"}
                           </div>
                           <div>
-                            <p className="text-xs font-semibold text-slate-800">{act.actor?.name || "System"}</p>
-                            <p className="text-[10px] text-slate-400 capitalize">{act.actor?.role || "—"}</p>
+                            <p className="text-xs font-semibold text-slate-800">{getActorName(act.actor)}</p>
+                            <p className="text-[10px] text-slate-400 capitalize">{getActorRole(act.actor)}</p>
                           </div>
                         </div>
                       </td>
                       <td className="px-5 py-3 text-xs text-slate-500">
-                        {act.department?.name || act.department || "—"}
+                        {getDepartmentLabel(act.department) || "—"}
                       </td>
                       <td className="px-5 py-3 text-xs text-slate-500 capitalize">
-                        {act.entityType || "—"}
+                        {typeof act.entityType === "object" ? "—" : String(act.entityType || "—")}
                       </td>
                       <td className="px-5 py-3">
                         <p className="text-[11px] text-slate-600 font-medium">{timeAgo(act.createdAt)}</p>
