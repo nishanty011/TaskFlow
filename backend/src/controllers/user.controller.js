@@ -1,21 +1,44 @@
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
 const ApiResponse = require('../utils/ApiResponse');
-const { User, Notification, ActivityLog } = require('../models');
+const { User, Department, Notification, ActivityLog } = require('../models');
 const { USER_ROLES, USER_STATUS, NOTIFICATION_TYPE, ACTIVITY_ACTIONS, ENTITY_TYPES } = require('../utils/constants');
 const { emitToUser } = require('../config/socket');
 
+// Helper: get all department IDs that a manager manages
+const getManagedDepartmentIds = async (managerId) => {
+  const departments = await Department.find({ manager: managerId }).select('_id');
+  return departments.map(d => d._id);
+};
+
 // 1. GET /api/users/pending
-// Manager ke liye - unke department ke pending approval employees
+// Returns pending approval employees from all departments the manager manages
 const getPendingEmployees = asyncHandler(async (req, res) => {
-  const deptId = req.user.department?._id || req.user.department;
+  let deptFilter;
+
+  if (req.user.role === USER_ROLES.SUPERADMIN) {
+    // Superadmin sees all pending employees across all departments
+    deptFilter = {};
+  } else {
+    // Manager: find all departments this manager manages
+    const managedDeptIds = await getManagedDepartmentIds(req.user._id);
+    // Also include the manager's own department as fallback
+    const ownDeptId = req.user.department?._id || req.user.department;
+    if (ownDeptId) {
+      const ownIdStr = ownDeptId.toString();
+      const alreadyIncluded = managedDeptIds.some(id => id.toString() === ownIdStr);
+      if (!alreadyIncluded) managedDeptIds.push(ownDeptId);
+    }
+    deptFilter = { department: { $in: managedDeptIds } };
+  }
 
   const pendingUsers = await User.find({
-    department: deptId,
+    ...deptFilter,
     role: USER_ROLES.EMPLOYEE,
     status: USER_STATUS.PENDING_APPROVAL
   })
-    .select('name email designation phone skills createdAt')
+    .select('name email designation phone skills createdAt department')
+    .populate('department', 'name code')
     .sort({ createdAt: -1 });
 
   res.status(200).json(
@@ -27,25 +50,35 @@ const getPendingEmployees = asyncHandler(async (req, res) => {
 });
 
 // 2. PATCH /api/users/:id/approve
-// Manager apne department ke pending employee ko approve kare
+// Manager approves a pending employee in any department they manage
 const approveEmployee = asyncHandler(async (req, res) => {
   const employee = await User.findById(req.params.id).populate('department');
 
-  if (!employee) throw new ApiError(404, 'Employee nahi mila');
+  if (!employee) throw new ApiError(404, 'Employee not found');
 
-  // Sirf apne department ka employee approve kar sakte hain
-  const managerDeptId = req.user.department?._id?.toString() || req.user.department?.toString();
-  const empDeptId = employee.department?._id?.toString() || employee.department?.toString();
+  // Check authorization: manager must manage the employee's department
+  if (req.user.role !== USER_ROLES.SUPERADMIN) {
+    const managedDeptIds = await getManagedDepartmentIds(req.user._id);
+    const ownDeptId = req.user.department?._id || req.user.department;
+    if (ownDeptId) {
+      const ownIdStr = ownDeptId.toString();
+      const alreadyIncluded = managedDeptIds.some(id => id.toString() === ownIdStr);
+      if (!alreadyIncluded) managedDeptIds.push(ownDeptId);
+    }
 
-  if (managerDeptId !== empDeptId) {
-    throw new ApiError(403, 'Aap sirf apne department ke employee ko approve kar sakte hain');
+    const empDeptId = employee.department?._id?.toString() || employee.department?.toString();
+    const isAuthorized = managedDeptIds.some(id => id.toString() === empDeptId);
+
+    if (!isAuthorized) {
+      throw new ApiError(403, 'You can only approve employees in departments you manage');
+    }
   }
 
   if (employee.status !== USER_STATUS.PENDING_APPROVAL) {
-    throw new ApiError(400, `Employee ka status already '${employee.status}' hai`);
+    throw new ApiError(400, `This employee's status is already '${employee.status}'`);
   }
 
-  // Status active kar do
+  // Set status to active
   employee.status = USER_STATUS.ACTIVE;
   employee.approvedBy = req.user._id;
   employee.approvedAt = new Date();
@@ -63,12 +96,13 @@ const approveEmployee = asyncHandler(async (req, res) => {
   emitToUser(employee._id.toString(), 'notification', notification);
 
   // Activity log record
+  const empDeptId = employee.department?._id?.toString() || employee.department?.toString();
   await ActivityLog.create({
     actor: req.user._id,
     action: ACTIVITY_ACTIONS.USER_APPROVED,
     entityType: ENTITY_TYPES.USER,
     entityId: employee._id,
-    department: managerDeptId,
+    department: empDeptId,
     meta: { employeeEmail: employee.email }
   });
 
@@ -86,22 +120,33 @@ const approveEmployee = asyncHandler(async (req, res) => {
 });
 
 // 3. PATCH /api/users/:id/reject
-// Manager rejects pending employee in their department
+// Manager rejects a pending employee in any department they manage
 const rejectEmployee = asyncHandler(async (req, res) => {
   const { reason } = req.body;
   const employee = await User.findById(req.params.id).populate('department');
 
-  if (!employee) throw new ApiError(404, 'Employee nahi mila');
+  if (!employee) throw new ApiError(404, 'Employee not found');
 
-  const managerDeptId = req.user.department?._id?.toString() || req.user.department?.toString();
-  const empDeptId = employee.department?._id?.toString() || employee.department?.toString();
+  // Check authorization: manager must manage the employee's department
+  if (req.user.role !== USER_ROLES.SUPERADMIN) {
+    const managedDeptIds = await getManagedDepartmentIds(req.user._id);
+    const ownDeptId = req.user.department?._id || req.user.department;
+    if (ownDeptId) {
+      const ownIdStr = ownDeptId.toString();
+      const alreadyIncluded = managedDeptIds.some(id => id.toString() === ownIdStr);
+      if (!alreadyIncluded) managedDeptIds.push(ownDeptId);
+    }
 
-  if (managerDeptId !== empDeptId) {
-    throw new ApiError(403, 'Aap sirf apne department ke employee ko reject kar sakte hain');
+    const empDeptId = employee.department?._id?.toString() || employee.department?.toString();
+    const isAuthorized = managedDeptIds.some(id => id.toString() === empDeptId);
+
+    if (!isAuthorized) {
+      throw new ApiError(403, 'You can only reject employees in departments you manage');
+    }
   }
 
   if (employee.status !== USER_STATUS.PENDING_APPROVAL) {
-    throw new ApiError(400, `Employee ka status already '${employee.status}' hai`);
+    throw new ApiError(400, `This employee's status is already '${employee.status}'`);
   }
 
   employee.status = USER_STATUS.REJECTED;
@@ -118,12 +163,13 @@ const rejectEmployee = asyncHandler(async (req, res) => {
 
   emitToUser(employee._id.toString(), 'notification', notification);
 
+  const empDeptId = employee.department?._id?.toString() || employee.department?.toString();
   await ActivityLog.create({
     actor: req.user._id,
     action: ACTIVITY_ACTIONS.USER_REJECTED,
     entityType: ENTITY_TYPES.USER,
     entityId: employee._id,
-    department: managerDeptId,
+    department: empDeptId,
     meta: { reason, employeeEmail: employee.email }
   });
 
@@ -135,18 +181,25 @@ const rejectEmployee = asyncHandler(async (req, res) => {
 });
 
 // 4. GET /api/users
-// Manager ke liye department ke saare active employees, superadmin ke liye sab
+// Returns employees scoped by role: manager sees managed departments, superadmin sees all
 const getEmployees = asyncHandler(async (req, res) => {
   const { status, search, page = 1, limit = 20 } = req.query;
 
-  // Base filter - superadmin ko sab, manager & employee ko sirf apna department
   const filter = {};
 
   if (req.user.role === USER_ROLES.EMPLOYEE) {
     filter.department = req.user.department?._id || req.user.department;
     filter.status = USER_STATUS.ACTIVE;
   } else if (req.user.role === USER_ROLES.MANAGER) {
-    filter.department = req.user.department?._id || req.user.department;
+    // Include all departments this manager manages
+    const managedDeptIds = await getManagedDepartmentIds(req.user._id);
+    const ownDeptId = req.user.department?._id || req.user.department;
+    if (ownDeptId) {
+      const ownIdStr = ownDeptId.toString();
+      const alreadyIncluded = managedDeptIds.some(id => id.toString() === ownIdStr);
+      if (!alreadyIncluded) managedDeptIds.push(ownDeptId);
+    }
+    filter.department = { $in: managedDeptIds };
     filter.role = USER_ROLES.EMPLOYEE;
   } else if (req.user.role === USER_ROLES.SUPERADMIN) {
     filter.role = { $in: [USER_ROLES.EMPLOYEE, USER_ROLES.MANAGER] };
@@ -174,7 +227,7 @@ const getEmployees = asyncHandler(async (req, res) => {
     .limit(parseInt(limit));
 
   res.status(200).json(
-    new ApiResponse(200, 'Employees fetch ho gaye', {
+    new ApiResponse(200, 'Employees fetched successfully', {
       total,
       page: parseInt(page),
       limit: parseInt(limit),
@@ -184,31 +237,38 @@ const getEmployees = asyncHandler(async (req, res) => {
 });
 
 // 5. GET /api/users/:id
-// Specific employee ki detail - manager sirf apne dept ka dekh sake
+// Returns specific employee detail - manager can view employees in managed departments
 const getEmployeeById = asyncHandler(async (req, res) => {
   const employee = await User.findById(req.params.id)
     .select('-password -otpHash -otpExpires')
     .populate('department', 'name code')
     .populate('approvedBy', 'name email');
 
-  if (!employee) throw new ApiError(404, 'Employee nahi mila');
+  if (!employee) throw new ApiError(404, 'Employee not found');
 
-  // Manager check - cross department access block
+  // Manager check - can only view employees in departments they manage
   if (req.user.role === USER_ROLES.MANAGER) {
-    const managerDeptId = req.user.department?._id?.toString() || req.user.department?.toString();
+    const managedDeptIds = await getManagedDepartmentIds(req.user._id);
+    const ownDeptId = req.user.department?._id || req.user.department;
+    if (ownDeptId) {
+      const ownIdStr = ownDeptId.toString();
+      const alreadyIncluded = managedDeptIds.some(id => id.toString() === ownIdStr);
+      if (!alreadyIncluded) managedDeptIds.push(ownDeptId);
+    }
     const empDeptId = employee.department?._id?.toString() || employee.department?.toString();
-    if (managerDeptId !== empDeptId) {
-      throw new ApiError(403, 'Aap sirf apne department ke employee ka profile dekh sakte hain');
+    const isAuthorized = managedDeptIds.some(id => id.toString() === empDeptId);
+    if (!isAuthorized) {
+      throw new ApiError(403, 'You can only view profiles of employees in departments you manage');
     }
   }
 
-  // Employee sirf apna profile dekh sakta hai
+  // Employee can only view their own profile
   if (req.user.role === USER_ROLES.EMPLOYEE && req.user._id.toString() !== employee._id.toString()) {
-    throw new ApiError(403, 'Aap sirf apna profile dekh sakte hain');
+    throw new ApiError(403, 'You can only view your own profile');
   }
 
   res.status(200).json(
-    new ApiResponse(200, 'Employee detail', { employee })
+    new ApiResponse(200, 'Employee details retrieved', { employee })
   );
 });
 

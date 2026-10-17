@@ -93,45 +93,45 @@ const register = asyncHandler(async (req, res) => {
 });
 
 // 2. POST /api/auth/verify-email
-// OTP verify karein, status = pending_approval aur department manager ko notify karein
+// Verify OTP, set status to pending_approval and notify department manager
 const verifyEmail = asyncHandler(async (req, res) => {
   const { email, otp } = req.body;
 
   const user = await User.findOne({ email }).select('+otpHash +otpExpires').populate('department');
   if (!user) {
-    throw new ApiError(404, 'User nahi mila');
+    throw new ApiError(404, 'User not found');
   }
 
   if (user.emailVerified) {
     return res.status(200).json(
-      new ApiResponse(200, 'Email already verified hai.', {
+      new ApiResponse(200, 'Email is already verified.', {
         status: user.status
       })
     );
   }
 
-  // OTP match aur expiry check karein
+  // OTP match and expiry check
   if (!user.otpHash || !user.otpExpires) {
-    throw new ApiError(400, 'OTP expire ho chuka hai. Naya OTP request karein.');
+    throw new ApiError(400, 'OTP has expired. Please request a new one.');
   }
 
   if (new Date() > user.otpExpires) {
-    throw new ApiError(400, 'OTP expire ho gaya hai. Kripya naya OTP generate karein.');
+    throw new ApiError(400, 'OTP has expired. Please generate a new OTP.');
   }
 
   const hashedEnteredOtp = hashOtp(otp);
   if (hashedEnteredOtp !== user.otpHash) {
-    throw new ApiError(400, 'Galat OTP enter kiya hai.');
+    throw new ApiError(400, 'Incorrect OTP entered.');
   }
 
-  // Email verify mark karein aur status ko pending_approval karein
+  // Mark email as verified and set status to pending_approval
   user.emailVerified = true;
   user.status = USER_STATUS.PENDING_APPROVAL;
   user.otpHash = null;
   user.otpExpires = null;
   await user.save();
 
-  // Department ke manager ko notification bhejein
+  // Notify department manager
   if (user.department && user.department.manager) {
     const manager = await User.findById(user.department.manager);
     if (manager) {
@@ -147,7 +147,7 @@ const verifyEmail = asyncHandler(async (req, res) => {
       // Emit real-time notification to manager
       emitToUser(manager._id.toString(), 'notification', notification);
 
-      // Email notification bhejein
+      // Send email notification
       await sendManagerApprovalNotification(
         manager.email,
         manager.name,
@@ -158,7 +158,7 @@ const verifyEmail = asyncHandler(async (req, res) => {
   }
 
   res.status(200).json(
-    new ApiResponse(200, 'Email successfully verify ho gaya hai. Aapka account department manager ke approval ke liye bhej diya gaya hai.', {
+    new ApiResponse(200, 'Email verified successfully. Your account has been submitted to the department manager for approval.', {
       emailVerified: true,
       status: user.status
     })
@@ -166,17 +166,17 @@ const verifyEmail = asyncHandler(async (req, res) => {
 });
 
 // 3. POST /api/auth/resend-otp
-// Naya OTP generate karke email karein
+// Generate and send a new OTP via email
 const resendOtp = asyncHandler(async (req, res) => {
   const { email } = req.body;
 
   const user = await User.findOne({ email });
   if (!user) {
-    throw new ApiError(404, 'User nahi mila');
+    throw new ApiError(404, 'User not found');
   }
 
   if (user.emailVerified) {
-    throw new ApiError(400, 'Email already verified hai, OTP ki zaroorat nahi hai');
+    throw new ApiError(400, 'Email is already verified. OTP is not required.');
   }
 
   const otp = generateOtp();
@@ -187,31 +187,31 @@ const resendOtp = asyncHandler(async (req, res) => {
   await sendVerificationEmail(email, user.name, otp);
 
   res.status(200).json(
-    new ApiResponse(200, 'Naya 6-digit OTP aapke email par bhej diya gaya hai.')
+    new ApiResponse(200, 'A new 6-digit OTP has been sent to your email.')
   );
 });
 
 // 4. POST /api/auth/login
-// Active users ko allow karein, pending/suspended ko block karein, access + refresh token return karein
+// Allow active users, block pending/suspended users, return access + refresh tokens
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  // Password select karke user find karein
+  // Find user with password field selected
   const user = await User.findOne({ email })
     .select('+password')
     .populate('department', 'name code');
 
   if (!user) {
-    throw new ApiError(401, 'Email ya password galat hai');
+    throw new ApiError(401, 'Invalid email or password');
   }
 
-  // Password verify karein
+  // Verify password
   const isMatch = await user.matchPassword(password);
   if (!isMatch) {
-    throw new ApiError(401, 'Email ya password galat hai');
+    throw new ApiError(401, 'Invalid email or password');
   }
 
-  // Status check - Sirf ACTIVE users login kar sakte hain
+  // Status check - Only ACTIVE users can log in
   // Status check - If user was in pending_email, auto-upgrade to pending_approval
   if (user.status === USER_STATUS.PENDING_EMAIL) {
     user.status = USER_STATUS.PENDING_APPROVAL;
@@ -237,18 +237,18 @@ const login = asyncHandler(async (req, res) => {
     });
   }
 
-  // Tokens generate karein
+  // Generate tokens
   const accessToken = generateAccessToken(user);
   const refreshToken = generateRefreshToken(user);
 
-  // Refresh token ko httpOnly cookie mein set karein
+  // Set refresh token as httpOnly cookie
   setRefreshTokenCookie(res, refreshToken);
 
-  // Last login time update karein
+  // Update last login time
   user.lastLoginAt = new Date();
   await user.save();
 
-  // Password hata ke user profile return karein
+  // Return user profile without password
   const userProfile = {
     _id: user._id,
     name: user.name,
@@ -269,12 +269,12 @@ const login = asyncHandler(async (req, res) => {
 });
 
 // 5. POST /api/auth/refresh
-// Cookie se refresh token padh ke naya access token generate karein
+// Read refresh token from cookie and generate a new access token
 const refresh = asyncHandler(async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
 
   if (!refreshToken) {
-    throw new ApiError(401, 'Refresh token missing hai, dobara login karein');
+    throw new ApiError(401, 'Refresh token is missing. Please sign in again.');
   }
 
   try {
@@ -285,7 +285,7 @@ const refresh = asyncHandler(async (req, res) => {
 
     const user = await User.findById(decoded.id);
     if (!user || user.status !== USER_STATUS.ACTIVE) {
-      throw new ApiError(401, 'User active nahi hai ya exist nahi karta');
+      throw new ApiError(401, 'User is not active or does not exist');
     }
 
     const newAccessToken = generateAccessToken(user);
@@ -297,30 +297,30 @@ const refresh = asyncHandler(async (req, res) => {
     );
   } catch (err) {
     clearRefreshTokenCookie(res);
-    throw new ApiError(401, 'Refresh token invalid ya expire ho gaya hai');
+    throw new ApiError(401, 'Refresh token is invalid or has expired');
   }
 });
 
 // 6. POST /api/auth/logout
-// Cookie clear karein
+// Clear refresh token cookie
 const logout = asyncHandler(async (req, res) => {
   clearRefreshTokenCookie(res);
 
   res.status(200).json(
-    new ApiResponse(200, 'Logout successfully complete ho gaya')
+    new ApiResponse(200, 'Logged out successfully')
   );
 });
 
 // 7. POST /api/auth/forgot-password
-// Reset password OTP email karein
+// Send password reset OTP via email
 const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
 
   const user = await User.findOne({ email });
   if (!user) {
-    // Security best practice: email exist na karne par bhi generic success message de sakte hain
+    // Security best practice: return generic success message even if email doesn't exist
     return res.status(200).json(
-      new ApiResponse(200, 'Agar email registered hai toh reset OTP bhej diya gaya hai.')
+      new ApiResponse(200, 'If this email is registered, a password reset OTP has been sent.')
     );
   }
 
@@ -332,50 +332,50 @@ const forgotPassword = asyncHandler(async (req, res) => {
   await sendPasswordResetEmail(email, user.name, otp);
 
   res.status(200).json(
-    new ApiResponse(200, 'Password reset OTP aapke email par bhej diya gaya hai.')
+    new ApiResponse(200, 'A password reset OTP has been sent to your email.')
   );
 });
 
 // 8. POST /api/auth/reset-password
-// OTP verify karke naya password set karein
+// Verify OTP and set a new password
 const resetPassword = asyncHandler(async (req, res) => {
   const { email, otp, newPassword } = req.body;
 
   const user = await User.findOne({ email }).select('+otpHash +otpExpires');
   if (!user) {
-    throw new ApiError(404, 'User nahi mila');
+    throw new ApiError(404, 'User not found');
   }
 
   if (!user.otpHash || !user.otpExpires) {
-    throw new ApiError(400, 'Reset request expire ho chuki hai. Kripya naya request karein.');
+    throw new ApiError(400, 'Reset request has expired. Please submit a new request.');
   }
 
   if (new Date() > user.otpExpires) {
-    throw new ApiError(400, 'Reset OTP expire ho gaya hai.');
+    throw new ApiError(400, 'Reset OTP has expired.');
   }
 
   if (hashOtp(otp) !== user.otpHash) {
-    throw new ApiError(400, 'Galat OTP enter kiya hai.');
+    throw new ApiError(400, 'Incorrect OTP entered.');
   }
 
-  // Naya password set karein (pre-save hook hash karega)
+  // Set new password (pre-save hook will hash it)
   user.password = newPassword;
   user.otpHash = null;
   user.otpExpires = null;
   await user.save();
 
   res.status(200).json(
-    new ApiResponse(200, 'Password successfully reset ho gaya hai. Ab aap naye password se login kar sakte hain.')
+    new ApiResponse(200, 'Password has been reset successfully. You can now sign in with your new password.')
   );
 });
 
 // 9. GET /api/auth/me
-// Current authenticated user ki details fetch karein
+// Fetch current authenticated user's details
 const getMe = asyncHandler(async (req, res) => {
-  // protect middleware req.user set karega
+  // protect middleware sets req.user
   const user = await User.findById(req.user._id).populate('department', 'name code');
   if (!user) {
-    throw new ApiError(404, 'User nahi mila');
+    throw new ApiError(404, 'User not found');
   }
 
   res.status(200).json(

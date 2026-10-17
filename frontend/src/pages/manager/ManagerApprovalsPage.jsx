@@ -182,7 +182,14 @@ export default function ManagerApprovalsPage() {
                       <p className="text-xs text-brand-600 font-semibold mt-0.5">
                         {emp.designation || "Department Candidate"}
                       </p>
-                      <p className="text-[11px] text-slate-400">{emp.email}</p>
+                      {emp.department && (
+                        <div className="mt-1">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-50 border border-indigo-100 text-indigo-700 text-[10px] font-bold">
+                            🏢 {typeof emp.department === 'object' ? emp.department.name : emp.department}
+                          </span>
+                        </div>
+                      )}
+                      <p className="text-[11px] text-slate-400 mt-0.5">{emp.email}</p>
                     </div>
                   </div>
 

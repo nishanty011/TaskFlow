@@ -3,10 +3,10 @@ const { z } = require('zod');
 // Registration validation schema
 const registerSchema = z.object({
   body: z.object({
-    name: z.string({ required_error: 'Naam enter karna zaroori hai' }).min(2, 'Naam kam se kam 2 characters ka hona chahiye').trim(),
-    email: z.string({ required_error: 'Email zaroori hai' }).email('Valid email address enter karein').toLowerCase().trim(),
-    password: z.string({ required_error: 'Password zaroori hai' }).min(6, 'Password kam se kam 6 characters ka hona chahiye'),
-    department: z.string({ required_error: 'Department select karna zaroori hai' }),
+    name: z.string({ required_error: 'Name is required' }).min(2, 'Name must be at least 2 characters').trim(),
+    email: z.string({ required_error: 'Email is required' }).email('Please enter a valid email address').toLowerCase().trim(),
+    password: z.string({ required_error: 'Password is required' }).min(6, 'Password must be at least 6 characters'),
+    department: z.string({ required_error: 'Please select a department' }),
     designation: z.string().optional().default(''),
     phone: z.string().optional().default('')
   })
@@ -15,39 +15,39 @@ const registerSchema = z.object({
 // Email verification OTP validation
 const verifyEmailSchema = z.object({
   body: z.object({
-    email: z.string({ required_error: 'Email zaroori hai' }).email('Valid email address enter karein').toLowerCase().trim(),
-    otp: z.string({ required_error: 'OTP enter karna zaroori hai' }).length(6, 'OTP exactly 6 digits ka hona chahiye')
+    email: z.string({ required_error: 'Email is required' }).email('Please enter a valid email address').toLowerCase().trim(),
+    otp: z.string({ required_error: 'OTP is required' }).length(6, 'OTP must be exactly 6 digits')
   })
 });
 
 // Resend OTP validation
 const resendOtpSchema = z.object({
   body: z.object({
-    email: z.string({ required_error: 'Email zaroori hai' }).email('Valid email address enter karein').toLowerCase().trim()
+    email: z.string({ required_error: 'Email is required' }).email('Please enter a valid email address').toLowerCase().trim()
   })
 });
 
 // Login validation schema
 const loginSchema = z.object({
   body: z.object({
-    email: z.string({ required_error: 'Email zaroori hai' }).email('Valid email enter karein').toLowerCase().trim(),
-    password: z.string({ required_error: 'Password zaroori hai' }).min(1, 'Password enter karein')
+    email: z.string({ required_error: 'Email is required' }).email('Please enter a valid email address').toLowerCase().trim(),
+    password: z.string({ required_error: 'Password is required' }).min(1, 'Please enter your password')
   })
 });
 
 // Forgot password schema
 const forgotPasswordSchema = z.object({
   body: z.object({
-    email: z.string({ required_error: 'Email zaroori hai' }).email('Valid email enter karein').toLowerCase().trim()
+    email: z.string({ required_error: 'Email is required' }).email('Please enter a valid email address').toLowerCase().trim()
   })
 });
 
 // Reset password schema
 const resetPasswordSchema = z.object({
   body: z.object({
-    email: z.string({ required_error: 'Email zaroori hai' }).email('Valid email enter karein').toLowerCase().trim(),
-    otp: z.string({ required_error: 'OTP enter karna zaroori hai' }).length(6, 'OTP exactly 6 digits ka hona chahiye'),
-    newPassword: z.string({ required_error: 'Naya password zaroori hai' }).min(6, 'Password kam se kam 6 characters ka hona chahiye')
+    email: z.string({ required_error: 'Email is required' }).email('Please enter a valid email address').toLowerCase().trim(),
+    otp: z.string({ required_error: 'OTP is required' }).length(6, 'OTP must be exactly 6 digits'),
+    newPassword: z.string({ required_error: 'New password is required' }).min(6, 'Password must be at least 6 characters')
   })
 });
 
