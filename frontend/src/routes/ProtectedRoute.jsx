@@ -49,6 +49,7 @@ export function GuestRoute() {
     // Role ke hisaab se redirect
     const dashboardPaths = {
       admin: "/admin/dashboard",
+      superadmin: "/admin/dashboard",
       manager: "/manager/dashboard",
       employee: "/employee/dashboard",
     };

@@ -45,3 +45,5 @@ export const isOverdueDate = (dueDate, status) => {
   if (!dueDate || status === 'completed') return false;
   return new Date(dueDate) < new Date();
 };
+
+export const timeAgo = formatRelativeTime;

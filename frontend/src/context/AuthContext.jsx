@@ -56,10 +56,10 @@ export function AuthProvider({ children }) {
     logout,
     loading,
     isAuthenticated: !!user,
-    isAdmin: user?.role === "admin",
+    isAdmin: user?.role === "admin" || user?.role === "superadmin",
     isManager: user?.role === "manager",
     isEmployee: user?.role === "employee",
-    isPending: user?.status === "pending", // approval ka wait
+    isPending: user?.status === "pending" || user?.status === "pending_approval", // approval ka wait
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

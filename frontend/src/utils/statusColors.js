@@ -104,3 +104,7 @@ export const USER_STATUS_CONFIG = {
     dot: 'bg-red-500'
   }
 };
+
+export const TASK_STATUS_COLORS = TASK_STATUS_CONFIG;
+export const PRIORITY_COLORS = PRIORITY_CONFIG;
+export const USER_STATUS_COLORS = USER_STATUS_CONFIG;

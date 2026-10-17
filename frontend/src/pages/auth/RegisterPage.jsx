@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import AuthLayout from "../../layouts/AuthLayout";
 import { registerUser } from "../../api/auth.api";
-import { getAllDepartments } from "../../api/department.api";
+import { getPublicDepartments } from "../../api/department.api";
 
 // Password strength check karo
 function getPasswordStrength(password) {
@@ -40,11 +40,11 @@ export default function RegisterPage() {
     formState: { errors },
   } = useForm();
 
-  // Departments load karo
+  // Departments load karo (public endpoint bina auth ke)
   useEffect(() => {
     const fetchDepts = async () => {
       try {
-        const { data } = await getAllDepartments();
+        const { data } = await getPublicDepartments();
         const depts = data.data?.departments || (Array.isArray(data.data) ? data.data : []);
         setDepartments(depts);
       } catch (err) {

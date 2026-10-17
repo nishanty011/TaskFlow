@@ -19,6 +19,7 @@ router.post('/register', otpLimiter, validate(registerSchema), authController.re
 
 // 2. Email verification OTP
 router.post('/verify-email', otpLimiter, validate(verifyEmailSchema), authController.verifyEmail);
+router.post('/verify-otp', otpLimiter, validate(verifyEmailSchema), authController.verifyEmail);
 
 // 3. Resend OTP
 router.post('/resend-otp', otpLimiter, validate(resendOtpSchema), authController.resendOtp);
@@ -28,6 +29,7 @@ router.post('/login', loginLimiter, validate(loginSchema), authController.login)
 
 // 5. Refresh JWT Token
 router.post('/refresh', authController.refresh);
+router.post('/refresh-token', authController.refresh);
 
 // 6. User Logout
 router.post('/logout', authController.logout);

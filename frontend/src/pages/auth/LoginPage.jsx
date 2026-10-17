@@ -9,6 +9,7 @@ import { useAuth } from "../../context/AuthContext";
 // Role ke hisaab se dashboard path
 const DASHBOARD_PATHS = {
   admin: "/admin/dashboard",
+  superadmin: "/admin/dashboard",
   manager: "/manager/dashboard",
   employee: "/employee/dashboard",
 };

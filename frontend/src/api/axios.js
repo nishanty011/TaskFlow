@@ -41,6 +41,19 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    // Agar request auth endpoint ki hai (login, register, etc.), toh token refresh try mat karo — direct reject karo
+    const isAuthRoute =
+      originalRequest?.url?.includes("/auth/login") ||
+      originalRequest?.url?.includes("/auth/register") ||
+      originalRequest?.url?.includes("/auth/refresh") ||
+      originalRequest?.url?.includes("/auth/verify-") ||
+      originalRequest?.url?.includes("/auth/forgot-password") ||
+      originalRequest?.url?.includes("/auth/reset-password");
+
+    if (isAuthRoute) {
+      return Promise.reject(error);
+    }
+
     // agar 401 aaya aur ye request already retry nahi ho rahi
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
@@ -60,7 +73,7 @@ api.interceptors.response.use(
 
       try {
         const { data } = await axios.post(
-          `${import.meta.env.VITE_API_URL || "http://localhost:5000/api"}/auth/refresh-token`,
+          `${import.meta.env.VITE_API_URL || "http://localhost:5000/api"}/auth/refresh`,
           {},
           { withCredentials: true }
         );
@@ -75,7 +88,13 @@ api.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null);
         localStorage.removeItem("accessToken");
-        window.location.href = "/login"; // session khatam — login pe bhejo
+
+        // Sirf protected pages par hone par hi login pe bhejo taaki infinite reload loop na bane
+        const publicPaths = ["/", "/login", "/register", "/verify-otp", "/forgot-password", "/reset-password", "/style-guide"];
+        const currentPath = window.location.pathname;
+        if (!publicPaths.includes(currentPath)) {
+          window.location.href = "/login";
+        }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
