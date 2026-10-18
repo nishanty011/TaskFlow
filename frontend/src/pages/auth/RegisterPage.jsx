@@ -31,7 +31,7 @@ export default function RegisterPage() {
   const [loadingDepts, setLoadingDepts] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [passwordValue, setPasswordValue] = useState("");
+  const [selectedRole, setSelectedRole] = useState("employee");
 
   const {
     register,
@@ -68,9 +68,15 @@ export default function RegisterPage() {
         email: formData.email,
         password: formData.password,
         department: formData.department,
+        role: selectedRole,
       });
 
-      toast.success("Account created! Awaiting Department Manager approval.");
+      const successMsg =
+        selectedRole === "manager"
+          ? "Manager account created! Awaiting Super Admin approval."
+          : "Account created! Awaiting Department Manager approval.";
+
+      toast.success(successMsg);
       navigate("/login", { state: { email: formData.email, registered: true } });
     } catch (err) {
       const msg = err.response?.data?.message || "Registration failed.";
@@ -84,11 +90,55 @@ export default function RegisterPage() {
     <AuthLayout>
       <div className="animate-fade-up">
         {/* Header */}
-        <div className="mb-7">
+        <div className="mb-6">
           <h2 className="text-2xl font-bold text-slate-900 mb-1">Create an account</h2>
           <p className="text-slate-500 text-sm">
-            Join your team on TaskFlow
+            Join your organization on TaskFlow
           </p>
+        </div>
+
+        {/* Role Selector */}
+        <div className="mb-5 animate-fade-up-1">
+          <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+            Register as
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setSelectedRole("employee")}
+              className={`p-3 rounded-2xl border text-left transition-all ${
+                selectedRole === "employee"
+                  ? "bg-brand-50/80 border-brand-500 shadow-sm ring-2 ring-brand-500/20"
+                  : "bg-white/80 border-slate-200/80 hover:bg-slate-50"
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-base">👤</span>
+                <span className="font-bold text-xs text-slate-900">Employee</span>
+              </div>
+              <p className="text-[10px] text-slate-500 leading-tight">
+                Approved by Manager
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedRole("manager")}
+              className={`p-3 rounded-2xl border text-left transition-all ${
+                selectedRole === "manager"
+                  ? "bg-purple-50/80 border-purple-500 shadow-sm ring-2 ring-purple-500/20"
+                  : "bg-white/80 border-slate-200/80 hover:bg-slate-50"
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-base">👔</span>
+                <span className="font-bold text-xs text-slate-900">Manager</span>
+              </div>
+              <p className="text-[10px] text-slate-500 leading-tight">
+                Approved by Super Admin
+              </p>
+            </button>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -242,10 +292,20 @@ export default function RegisterPage() {
 
           {/* Note about approval */}
           <div className="animate-fade-up-4">
-            <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 flex gap-2">
-              <span className="text-amber-500 text-sm mt-0.5">ℹ</span>
-              <p className="text-xs text-amber-700 leading-relaxed">
-                Your account will be reviewed and approved by your Department Manager before you can log in.
+            <div className={`border rounded-xl p-3 flex gap-2 ${
+              selectedRole === "manager"
+                ? "bg-purple-50/80 border-purple-100"
+                : "bg-amber-50 border-amber-100"
+            }`}>
+              <span className={`text-sm mt-0.5 ${
+                selectedRole === "manager" ? "text-purple-500" : "text-amber-500"
+              }`}>ℹ</span>
+              <p className={`text-xs leading-relaxed ${
+                selectedRole === "manager" ? "text-purple-700" : "text-amber-700"
+              }`}>
+                {selectedRole === "manager"
+                  ? "Your Manager registration request will be reviewed and approved by the Super Admin before you can access the Manager Portal."
+                  : "Your account will be reviewed and approved by your Department Manager before you can log in."}
               </p>
             </div>
           </div>

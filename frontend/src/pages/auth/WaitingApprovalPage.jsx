@@ -40,7 +40,9 @@ export default function WaitingApprovalPage() {
             Awaiting approval
           </h1>
           <p className="text-slate-500 text-sm leading-relaxed mb-6">
-            Your account has been created and your email is verified. An admin will review and approve your account shortly.
+            {user?.role === "manager"
+              ? "Your Manager account registration has been submitted. The Super Admin will review and approve your request shortly."
+              : "Your account has been created. Your Department Manager will review and approve your account shortly."}
           </p>
 
           {/* User info card */}

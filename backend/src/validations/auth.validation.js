@@ -7,6 +7,7 @@ const registerSchema = z.object({
     email: z.string({ required_error: 'Email is required' }).email('Please enter a valid email address').toLowerCase().trim(),
     password: z.string({ required_error: 'Password is required' }).min(6, 'Password must be at least 6 characters'),
     department: z.string({ required_error: 'Please select a department' }),
+    role: z.enum(['employee', 'manager']).optional().default('employee'),
     designation: z.string().optional().default(''),
     phone: z.string().optional().default('')
   })

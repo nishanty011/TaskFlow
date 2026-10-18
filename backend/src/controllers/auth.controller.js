@@ -29,9 +29,9 @@ const generateOtp = () => {
 };
 
 // 1. POST /api/auth/register
-// Employee sign up: email verification step removed, account goes directly to pending_approval and manager is notified
+// Sign up: supports both Employee and Manager registration
 const register = asyncHandler(async (req, res) => {
-  const { name, email, password, department, designation, phone } = req.body;
+  const { name, email, password, department, role, designation, phone } = req.body;
 
   // Check if email already registered
   const existingUser = await User.findOne({ email });
@@ -45,51 +45,80 @@ const register = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'Selected department is not valid');
   }
 
-  // Create user directly with emailVerified: true and status: PENDING_APPROVAL
+  const assignedRole = role === 'manager' ? USER_ROLES.MANAGER : USER_ROLES.EMPLOYEE;
+
+  // Create user with emailVerified: true and status: PENDING_APPROVAL
   const newUser = await User.create({
     name,
     email,
     password,
     department: dept._id,
-    role: USER_ROLES.EMPLOYEE,
+    role: assignedRole,
     status: USER_STATUS.PENDING_APPROVAL,
     emailVerified: true,
-    designation: designation || '',
+    designation: designation || (assignedRole === USER_ROLES.MANAGER ? 'Department Manager' : ''),
     phone: phone || ''
   });
 
-  // Notify Department Manager immediately for approval
-  if (dept.manager) {
-    const manager = await User.findById(dept.manager);
-    if (manager) {
+  if (assignedRole === USER_ROLES.MANAGER) {
+    // Notify all Super Admins for Manager registration approval
+    const superadmins = await User.find({ role: USER_ROLES.SUPERADMIN, status: USER_STATUS.ACTIVE });
+    for (const admin of superadmins) {
       const notification = await Notification.create({
-        user: manager._id,
+        user: admin._id,
         type: NOTIFICATION_TYPE.EMPLOYEE_REGISTERED,
-        title: 'New Employee Pending Approval',
-        message: `${newUser.name} registered for the ${dept.name} department and is waiting for your approval.`,
-        link: '/manager/pending-employees'
+        title: 'New Manager Pending Approval',
+        message: `${newUser.name} registered as Manager for ${dept.name} and is waiting for your approval.`,
+        link: '/admin/users'
       });
-
-      emitToUser(manager._id.toString(), 'notification', notification);
-
-      await sendManagerApprovalNotification(
-        manager.email,
-        manager.name,
-        newUser.name,
-        dept.name
-      );
+      emitToUser(admin._id.toString(), 'notification', notification);
     }
-  }
 
-  res.status(201).json(
-    new ApiResponse(201, 'Registration successful! Your account has been submitted to your Department Manager for approval.', {
-      userId: newUser._id,
-      name: newUser.name,
-      email: newUser.email,
-      department: dept.name,
-      status: newUser.status
-    })
-  );
+    return res.status(201).json(
+      new ApiResponse(201, 'Registration successful! Your Manager account request has been submitted to the Super Admin for approval.', {
+        userId: newUser._id,
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role,
+        department: dept.name,
+        status: newUser.status
+      })
+    );
+  } else {
+    // Notify Department Manager immediately for Employee approval
+    if (dept.manager) {
+      const manager = await User.findById(dept.manager);
+      if (manager) {
+        const notification = await Notification.create({
+          user: manager._id,
+          type: NOTIFICATION_TYPE.EMPLOYEE_REGISTERED,
+          title: 'New Employee Pending Approval',
+          message: `${newUser.name} registered for the ${dept.name} department and is waiting for your approval.`,
+          link: '/manager/approvals'
+        });
+
+        emitToUser(manager._id.toString(), 'notification', notification);
+
+        await sendManagerApprovalNotification(
+          manager.email,
+          manager.name,
+          newUser.name,
+          dept.name
+        );
+      }
+    }
+
+    return res.status(201).json(
+      new ApiResponse(201, 'Registration successful! Your account has been submitted to your Department Manager for approval.', {
+        userId: newUser._id,
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role,
+        department: dept.name,
+        status: newUser.status
+      })
+    );
+  }
 });
 
 // 2. POST /api/auth/verify-email

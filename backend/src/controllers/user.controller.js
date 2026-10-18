@@ -12,17 +12,18 @@ const getManagedDepartmentIds = async (managerId) => {
 };
 
 // 1. GET /api/users/pending
-// Returns pending approval employees from all departments the manager manages
+// 1. GET /api/users/pending
+// Returns pending approval users: Superadmin sees all pending (employees & managers), Manager sees only employees in their departments
 const getPendingEmployees = asyncHandler(async (req, res) => {
-  let deptFilter;
+  let deptFilter = {};
+  let roleFilter = USER_ROLES.EMPLOYEE;
 
   if (req.user.role === USER_ROLES.SUPERADMIN) {
-    // Superadmin sees all pending employees across all departments
-    deptFilter = {};
+    // Superadmin sees all pending employees and managers across all departments
+    roleFilter = { $in: [USER_ROLES.EMPLOYEE, USER_ROLES.MANAGER] };
   } else {
     // Manager: find all departments this manager manages
     const managedDeptIds = await getManagedDepartmentIds(req.user._id);
-    // Also include the manager's own department as fallback
     const ownDeptId = req.user.department?._id || req.user.department;
     if (ownDeptId) {
       const ownIdStr = ownDeptId.toString();
@@ -34,15 +35,15 @@ const getPendingEmployees = asyncHandler(async (req, res) => {
 
   const pendingUsers = await User.find({
     ...deptFilter,
-    role: USER_ROLES.EMPLOYEE,
+    role: roleFilter,
     status: USER_STATUS.PENDING_APPROVAL
   })
-    .select('name email designation phone skills createdAt department')
+    .select('name email role designation phone skills createdAt department')
     .populate('department', 'name code')
     .sort({ createdAt: -1 });
 
   res.status(200).json(
-    new ApiResponse(200, 'Pending approval employees', {
+    new ApiResponse(200, 'Pending approval users', {
       count: pendingUsers.length,
       employees: pendingUsers
     })
@@ -50,13 +51,18 @@ const getPendingEmployees = asyncHandler(async (req, res) => {
 });
 
 // 2. PATCH /api/users/:id/approve
-// Manager approves a pending employee in any department they manage
+// Approves a pending user (Managers require Superadmin; Employees can be approved by Manager or Superadmin)
 const approveEmployee = asyncHandler(async (req, res) => {
   const employee = await User.findById(req.params.id).populate('department');
 
-  if (!employee) throw new ApiError(404, 'Employee not found');
+  if (!employee) throw new ApiError(404, 'User not found');
 
-  // Check authorization: manager must manage the employee's department
+  // Manager registration requests can ONLY be approved by Superadmin
+  if (employee.role === USER_ROLES.MANAGER && req.user.role !== USER_ROLES.SUPERADMIN) {
+    throw new ApiError(403, 'Only Super Admin can approve Manager registration requests');
+  }
+
+  // Check authorization for Employee approval
   if (req.user.role !== USER_ROLES.SUPERADMIN) {
     const managedDeptIds = await getManagedDepartmentIds(req.user._id);
     const ownDeptId = req.user.department?._id || req.user.department;
@@ -75,7 +81,7 @@ const approveEmployee = asyncHandler(async (req, res) => {
   }
 
   if (employee.status !== USER_STATUS.PENDING_APPROVAL) {
-    throw new ApiError(400, `This employee's status is already '${employee.status}'`);
+    throw new ApiError(400, `This user's status is already '${employee.status}'`);
   }
 
   // Set status to active
@@ -84,13 +90,22 @@ const approveEmployee = asyncHandler(async (req, res) => {
   employee.approvedAt = new Date();
   await employee.save();
 
-  // Notify employee - account approved
+  // If approved user is a Manager, assign them as manager of their department
+  if (employee.role === USER_ROLES.MANAGER && employee.department) {
+    const deptId = employee.department._id || employee.department;
+    await Department.findByIdAndUpdate(deptId, { manager: employee._id });
+  }
+
+  // Notify user - account approved
+  const isMgr = employee.role === USER_ROLES.MANAGER;
   const notification = await Notification.create({
     user: employee._id,
     type: NOTIFICATION_TYPE.EMPLOYEE_APPROVED,
-    title: 'Account Approved!',
-    message: `${req.user.name} approved your account. You can now access TaskFlow!`,
-    link: '/dashboard'
+    title: isMgr ? 'Manager Account Approved!' : 'Account Approved!',
+    message: isMgr
+      ? `Your Manager account for ${employee.department?.name || 'your department'} has been approved by Super Admin. You can now access the Manager Portal!`
+      : `${req.user.name} approved your account. You can now access TaskFlow!`,
+    link: isMgr ? '/manager/dashboard' : '/dashboard'
   });
 
   emitToUser(employee._id.toString(), 'notification', notification);
@@ -103,7 +118,7 @@ const approveEmployee = asyncHandler(async (req, res) => {
     entityType: ENTITY_TYPES.USER,
     entityId: employee._id,
     department: empDeptId,
-    meta: { employeeEmail: employee.email }
+    meta: { userEmail: employee.email, role: employee.role }
   });
 
   res.status(200).json(
@@ -112,6 +127,7 @@ const approveEmployee = asyncHandler(async (req, res) => {
         _id: employee._id,
         name: employee.name,
         email: employee.email,
+        role: employee.role,
         status: employee.status,
         approvedAt: employee.approvedAt
       }
@@ -120,14 +136,19 @@ const approveEmployee = asyncHandler(async (req, res) => {
 });
 
 // 3. PATCH /api/users/:id/reject
-// Manager rejects a pending employee in any department they manage
+// Rejects a pending user (Managers require Superadmin; Employees can be rejected by Manager or Superadmin)
 const rejectEmployee = asyncHandler(async (req, res) => {
   const { reason } = req.body;
   const employee = await User.findById(req.params.id).populate('department');
 
-  if (!employee) throw new ApiError(404, 'Employee not found');
+  if (!employee) throw new ApiError(404, 'User not found');
 
-  // Check authorization: manager must manage the employee's department
+  // Manager registration requests can ONLY be rejected by Superadmin
+  if (employee.role === USER_ROLES.MANAGER && req.user.role !== USER_ROLES.SUPERADMIN) {
+    throw new ApiError(403, 'Only Super Admin can reject Manager registration requests');
+  }
+
+  // Check authorization for Employee rejection
   if (req.user.role !== USER_ROLES.SUPERADMIN) {
     const managedDeptIds = await getManagedDepartmentIds(req.user._id);
     const ownDeptId = req.user.department?._id || req.user.department;
@@ -146,19 +167,19 @@ const rejectEmployee = asyncHandler(async (req, res) => {
   }
 
   if (employee.status !== USER_STATUS.PENDING_APPROVAL) {
-    throw new ApiError(400, `This employee's status is already '${employee.status}'`);
+    throw new ApiError(400, `This user's status is already '${employee.status}'`);
   }
 
   employee.status = USER_STATUS.REJECTED;
   await employee.save();
 
-  // Notify employee of rejection
+  // Notify user of rejection
   const notification = await Notification.create({
     user: employee._id,
     type: NOTIFICATION_TYPE.EMPLOYEE_REJECTED,
     title: 'Registration Request Rejected',
-    message: `Your registration request was rejected. Reason: ${reason}`,
-    link: '/contact'
+    message: `Your registration request was rejected. Reason: ${reason || 'Not specified'}`,
+    link: '/waiting-approval'
   });
 
   emitToUser(employee._id.toString(), 'notification', notification);
